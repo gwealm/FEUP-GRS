@@ -1,0 +1,70 @@
+version: '3'
+services:
+  nginx:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    privileged: true
+    ports:
+      - 80
+    networks:
+      server_net:
+        ipv4_address: 10.0.2.2
+  
+  client_1:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: client1
+    privileged: true
+    ports: 
+      - 80
+    networks:
+      client_net:
+        ipv4_address: 10.0.1.2
+    tty: true
+    depends_on:
+      - router
+    
+  client_2:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: client2
+    privileged: true
+    ports: 
+      - 80
+    networks:
+      client_net:
+        ipv4_address: 10.0.1.3
+    tty: true
+    depends_on:
+      - router
+  
+  router:
+    build:
+      context: ./router
+      dockerfile: Dockerfile
+    container_name: router
+    hostname: router
+    privileged: true
+    networks:
+      client_net:
+        ipv4_address: 10.0.1.254
+      server_net:
+        ipv4_address: 10.0.2.254
+  
+networks:
+  client_net:
+    ipam:
+      driver: default
+      config:
+        - subnet: 10.0.1.0/24
+          gateway: 10.0.1.1 # this is used for connectivity to the host
+
+  server_net:
+    ipam:
+      driver: default
+      config:
+        - subnet: 10.0.2.0/24
+          gateway: 10.0.2.1 # this is used for connectivity to the host

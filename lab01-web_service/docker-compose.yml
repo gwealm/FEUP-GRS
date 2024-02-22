@@ -1,21 +1,36 @@
 version: '3'
 services:
-  nginx:
+  server:
     build:
-      context: ./nginx
+      context: ./server
       dockerfile: Dockerfile
+    # container_name: server
+    deploy:
+      replicas: 3
     privileged: true
     ports:
       - 80
     networks:
       server_net:
         ipv4_address: 10.0.2.2
+
+  load-balancer:
+    build:
+      context: ./load-balancer
+      dockerfile: Dockerfile
+    privileged: true
+    ports:
+      - 80
+    depends_on:
+      - server
+    networks:
+      server_net:
+        ipv4_address: 10.0.2.5
   
   client_1:
     build:
       context: ./client
       dockerfile: Dockerfile
-    container_name: client1
     privileged: true
     ports: 
       - 80
@@ -30,7 +45,6 @@ services:
     build:
       context: ./client
       dockerfile: Dockerfile
-    container_name: client2
     privileged: true
     ports: 
       - 80
@@ -45,34 +59,34 @@ services:
     build:
       context: ./router
       dockerfile: Dockerfile
-    container_name: router
     hostname: router
     privileged: true
     networks:
       client_net:
-        ipv4_address: 10.0.1.254
+        ipv4_address: 10.0.1.4 # smaller IP range
       server_net:
-        ipv4_address: 10.0.2.254
+        ipv4_address: 10.0.2.6 # smaller IP range
       router_net:
-        ipv4_address: 10.0.3.254
+        ipv4_address: 10.0.3.2 # smaller IP range
+
 networks:
   client_net:
     ipam:
       driver: default
       config:
-        - subnet: 10.0.1.0/24
+        - subnet: 10.0.1.0/29
           gateway: 10.0.1.1 # this is used for connectivity to the host
 
   server_net:
     ipam:
       driver: default
       config:
-        - subnet: 10.0.2.0/24
+        - subnet: 10.0.2.0/29
           gateway: 10.0.2.1 # this is used for connectivity to the host
 
   router_net:
     ipam:
       driver: default
       config:
-        - subnet: 10.0.3.0/24
+        - subnet: 10.0.3.0/30
           gateway: 10.0.3.1 # this is used for connectivity to the host

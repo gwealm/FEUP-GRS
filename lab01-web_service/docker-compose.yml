@@ -1,18 +1,21 @@
 version: '3'
 services:
-  server:
+  backend:
     build:
-      context: ./server
+      context: ./backend
       dockerfile: Dockerfile
-    # container_name: server
     deploy:
       replicas: 3
     privileged: true
+    environment:
+      - DOCKER_HOST=unix:///run/docker.sock
+    volumes:
+      # - ./:/root:z
+      - /run/docker.sock:/run/docker.sock:ro
     ports:
       - 80
     networks:
-      server_net:
-        ipv4_address: 10.0.2.2
+      - backend_net
 
   load-balancer:
     build:
@@ -22,10 +25,9 @@ services:
     ports:
       - 80
     depends_on:
-      - server
+      - backend
     networks:
-      server_net:
-        ipv4_address: 10.0.2.5
+      - backend_net
   
   client_1:
     build:
@@ -64,7 +66,7 @@ services:
     networks:
       client_net:
         ipv4_address: 10.0.1.4 # smaller IP range
-      server_net:
+      backend_net:
         ipv4_address: 10.0.2.6 # smaller IP range
       router_net:
         ipv4_address: 10.0.3.2 # smaller IP range
@@ -77,7 +79,7 @@ networks:
         - subnet: 10.0.1.0/29
           gateway: 10.0.1.1 # this is used for connectivity to the host
 
-  server_net:
+  backend_net:
     ipam:
       driver: default
       config:

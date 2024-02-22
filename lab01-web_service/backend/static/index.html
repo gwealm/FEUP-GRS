@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Document</title>
+    </head>
+    <body>
+        <div id="container_id"></div>
+
+        <script>
+            document.querySelector("#container_id").textContent = "AAA"
+
+            // Function to fetch the container ID
+            async function getContainerID() {
+                try {
+                    const response = await fetch("../../../../etc/profile");
+                    const text = await response.text();
+                    // Extract container ID from the response
+                    const containerID = text.split("\n")[0].split("/").pop();
+                    // Update the container ID in the HTML
+                    document.querySelector("#container_id").textContent =
+                        text;
+                } catch (error) {
+                    console.error("Error fetching container ID:", error);
+                }
+            }
+
+            // Call the function to get the container ID
+            getContainerID();
+        </script>
+    </body>
+</html>

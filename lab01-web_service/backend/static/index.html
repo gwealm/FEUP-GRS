@@ -6,28 +6,8 @@
         <title>Document</title>
     </head>
     <body>
-        <div id="container_id"></div>
-
-        <script>
-            document.querySelector("#container_id").textContent = "AAA"
-
-            // Function to fetch the container ID
-            async function getContainerID() {
-                try {
-                    const response = await fetch("../../../../etc/profile");
-                    const text = await response.text();
-                    // Extract container ID from the response
-                    const containerID = text.split("\n")[0].split("/").pop();
-                    // Update the container ID in the HTML
-                    document.querySelector("#container_id").textContent =
-                        text;
-                } catch (error) {
-                    console.error("Error fetching container ID:", error);
-                }
-            }
-
-            // Call the function to get the container ID
-            getContainerID();
-        </script>
+        <h1>Load Balancing Test</h1>
+        <div id="container_id1">Server ID: <!--# echo var="HOSTNAME" --></div>
+        <div id="container_id2">Server Name: <!--# echo var="SERVER_ID" --></div>
     </body>
 </html>

@@ -1,0 +1,113 @@
+version: '3'
+services:
+
+  router:
+    build:
+      context: ./baseimage-cfg/baseimage
+    privileged: true
+    cap_add:
+      - "NET_ADMIN"
+    volumes:
+      - ./gors/org1-ospf/quagga/zebra.conf:/etc/quagga/zebra.conf
+      - ./gors/org1-ospf/quagga/ospfd.conf:/etc/quagga/ospfd.conf
+
+  server:
+    build:
+      context: ./baseimage-cfg/baseimage
+    privileged: true
+    cap_add:
+      - "NET_ADMIN"
+
+  server1:
+    extends: server
+    command: >
+      /bin/bash -c 'ip r del default via 172.16.123.145'
+      && /bin/bash -c 'ip r add default via 172.16.123.158'
+    networks:
+      public_net_r2:
+        ipv4_address: 172.16.123.146
+
+  server2:
+    extends: server
+    command: >
+      /bin/bash -c 'ip r del default via 172.16.123.129'
+      && /bin/bash -c 'ip r add default via 172.16.123.142'
+    networks:
+      public_net_r3:
+        ipv4_address: 172.16.123.130
+
+  router1:
+    extends: router
+    command: >
+      /bin/bash -c 'ip r del default via 10.0.1.1'
+      && /bin/bash -c 'ip r add default via 172.31.255.1'
+    networks:
+      public_net:
+        ipv4_address: 172.31.255.253
+      router1_2net:
+        ipv4_address: 10.0.1.10
+      router1_3net:
+        ipv4_address: 10.0.1.2
+
+  router2:
+    extends: router
+    command: >
+      /bin/bash -c 'ip r del default via 10.0.1.9' 
+    networks:
+      public_net_r2:
+        ipv4_address: 172.16.123.158
+      router1_2net:
+        ipv4_address: 10.0.1.11
+      router2_3net:
+        ipv4_address: 10.0.1.18
+
+  router3:
+    extends: router
+    command: >
+      /bin/bash -c 'ip r del default via 10.0.1.1'
+    networks:
+      public_net_r3:
+        ipv4_address: 172.16.123.142
+      router1_3net:
+        ipv4_address: 10.0.1.3
+      router2_3net:
+        ipv4_address: 10.0.1.19
+
+networks:
+  router1_3net:
+    ipam:
+      driver: default
+      config:
+        - subnet: 10.0.1.0/29
+          gateway: 10.0.1.1
+  router1_2net:
+    ipam:
+      driver: default
+      config:
+        - subnet: 10.0.1.8/29
+          gateway: 10.0.1.9
+  router2_3net:
+    ipam:
+      driver: default
+      config:
+        - subnet: 10.0.1.16/29
+          gateway: 10.0.1.17
+  public_net_r3:
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.16.123.128/29
+          gateway: 172.16.123.129
+  public_net_r2:
+      ipam:
+        driver: default
+        config:
+          - subnet: 172.16.123.144/29
+            gateway: 172.16.123.145
+  public_net:
+      ipam:
+        driver: default
+        config:
+          - subnet: 172.31.255.0/24
+            gateway: 172.31.255.254
+

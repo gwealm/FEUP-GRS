@@ -1,0 +1,77 @@
+version: '3'
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    privileged: true
+    ports:
+      - 80
+    networks:
+      backend_net:
+        ipv4_address: 10.0.2.101
+      
+
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    privileged: true
+    container_name: client
+    ports: 
+      - 80
+    networks:
+      client_net:
+        ipv4_address: 10.0.1.100
+    tty: true
+    depends_on:
+      - router
+
+  proxy:
+    build:
+      context: ./proxy
+      dockerfile: Dockerfile
+    privileged: true
+    container_name: proxy
+    ports:
+      - 80
+    environment:
+      TZ: "UTC"
+    cap_add:
+      - "NET_ADMIN"
+    networks:
+      client_net:
+        ipv4_address: 10.0.1.253
+    ulimits:    # (https://bugs.launchpad.net/ubuntu-docker-images/+bug/1978272)
+      nofile:
+        soft: 65536
+        hard: 65536
+    
+  router:
+    build:
+      context: ./router
+      dockerfile: Dockerfile
+    hostname: router
+    privileged: true
+    networks:
+      client_net:
+        ipv4_address: 10.0.1.254 # smaller IP range
+      backend_net:
+        ipv4_address: 10.0.2.254 # smaller IP range
+
+networks:
+  client_net:
+    ipam:
+      driver: default
+      config:
+        - subnet: 10.0.1.0/24
+          gateway: 10.0.1.1
+
+  backend_net:
+    ipam:
+      driver: default
+      config:
+        - subnet: 10.0.2.0/24
+          gateway: 10.0.2.1
+
+

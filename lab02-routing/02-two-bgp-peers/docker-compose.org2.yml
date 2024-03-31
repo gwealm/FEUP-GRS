@@ -1,0 +1,109 @@
+### Differently from org1, subnetting here is made with
+### the minimum viable masks, to avoid wasting addresses
+version: '3'
+services:
+  org2_client:
+    build:
+      context: ./client
+    container_name: org2_client
+    privileged: true
+    command: >
+      sh -c "/sbin/ip route delete default via 172.16.123.1 && /sbin/ip route add default via 172.16.123.3 && /root/sleep.sh"
+    networks:
+      org2_client_net:
+        ipv4_address: 172.16.123.2
+    tty: true
+  org2_backend:
+    build:
+      context: ./backend
+    container_name: org2_backend
+    privileged: true
+    ports:
+      - 80
+    command: >
+      sh -c "/sbin/ip route delete default via 172.16.123.17 && /sbin/ip route add default via 172.16.123.19 && /root/sleep.sh"
+    networks:
+      org2_backend_net:
+        ipv4_address: 172.16.123.18
+    tty: true
+  org2_router1:
+    build:
+      context: ./router
+    container_name: org2_router1
+    volumes:
+      - ./router/quagga/zebra.conf:/etc/quagga/zebra.conf
+      - ./router/quagga/ospfd.conf:/etc/quagga/ospfd.conf
+      - ./router/quagga/bgpd-org2.conf:/etc/quagga/bgpd.conf
+    privileged: true
+    networks:
+      net_public:
+        ipv4_address: 172.31.255.252
+      org2_router_12:
+        ipv4_address: 10.0.2.11
+      org2_router_13:
+        ipv4_address: 10.0.2.3
+  org2_router2:
+    build:
+      context: ./router
+    container_name: org2_router2
+    privileged: true
+    volumes:
+      - ./router/quagga/zebra.conf:/etc/quagga/zebra.conf
+      - ./router/quagga/ospfd.conf:/etc/quagga/ospfd.conf
+    networks:
+      org2_client_net:
+        ipv4_address: 172.16.123.3
+      org2_router_12:
+        ipv4_address: 10.0.2.10
+      org2_router_23:
+        ipv4_address: 10.0.2.18
+  org2_router3:
+    build:
+      context: ./router
+    container_name: org2_router3
+    privileged: true
+    volumes:
+      - ./router/quagga/zebra.conf:/etc/quagga/zebra.conf
+      - ./router/quagga/ospfd.conf:/etc/quagga/ospfd.conf
+    networks:
+      org2_backend_net:
+        ipv4_address: 172.16.123.19
+      org2_router_13:
+        ipv4_address: 10.0.2.2
+      org2_router_23:
+        ipv4_address: 10.0.2.19
+## Docker-Compose chooses network interfaces based on the lexic order of the network
+## since ospf is interface-sensitive, naming should be choosen carefully
+## https://weyl.io/2022/01/docker-container-network-interface-ordering/
+networks:
+  net_public:
+    ipam:
+      config:
+        - subnet: 172.31.255.0/24
+          gateway: 172.31.255.1
+  org2_client_net:
+    ipam:
+      config:
+        - subnet: 172.16.123.0/29
+          gateway: 172.16.123.1
+  org2_backend_net:
+    ipam:
+      config:
+        - subnet: 172.16.123.16/29
+          gateway: 172.16.123.17
+  org2_router_12:
+    ipam:
+      config:
+        - subnet: 10.0.2.8/29
+          gateway: 10.0.2.9
+  org2_router_13:
+    ipam:
+      config:
+        - subnet: 10.0.2.0/29
+          gateway: 10.0.2.1
+  org2_router_23:
+    ipam:
+      config:
+        - subnet: 10.0.2.16/29
+          gateway: 10.0.2.17
+

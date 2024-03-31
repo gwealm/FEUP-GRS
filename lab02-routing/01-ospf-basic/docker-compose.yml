@@ -1,0 +1,127 @@
+version: '3'
+services:
+  client:
+    build:
+      context: ./client
+    container_name: client
+    privileged: true
+    command: >
+      sh -c "/sbin/ip route del default via 172.16.123.129 && /sbin/ip route add default via 172.16.123.142 && /root/sleep.sh"
+    networks:
+      client_net:
+        ipv4_address: 172.16.123.130
+    tty: true
+  test_client:
+    build:
+      context: ./client
+    container_name: test_client
+    privileged: true
+    command: >
+      sh -c "/sbin/ip route delete default via 172.31.255.254 && /sbin/ip route add default via 172.31.255.253 && /root/sleep.sh"
+    cap_add:
+      - NET_ADMIN
+    networks:
+      public_net:
+        ipv4_address: 172.31.255.5
+    tty: true
+  backend:
+    build:
+      context: ./backend
+    container_name: backend
+    privileged: true
+    ports:
+      - 80
+    command: >
+      sh -c "/sbin/ip route delete default via 172.16.123.145 && /sbin/ip route add default via 172.16.123.158 && /root/sleep.sh"
+    cap_add:
+      - NET_ADMIN
+    networks:
+      backend_net:
+        ipv4_address: 172.16.123.146
+    tty: true
+  router1:
+    build:
+      context: ./router
+    container_name: router1
+    volumes:
+      - ./router/quagga/zebra.conf:/etc/quagga/zebra.conf
+      - ./router/quagga/ospfd.conf:/etc/quagga/ospfd.conf
+    privileged: true
+    cap_add:
+      - NET_ADMIN
+    # command: >
+    #   sh -c "/sbin/ip route replace default via 172.31.255.253 && /root/start.sh"
+    networks:
+      public_net:
+        ipv4_address: 172.31.255.253
+      router_12:
+        ipv4_address: 10.0.1.10
+      router_13:
+        ipv4_address: 10.0.1.2
+  router2:
+    build:
+      context: ./router
+    container_name: router2
+    privileged: true
+    # command: sh -c "/root/start.sh"
+    cap_add:
+      - NET_ADMIN
+    volumes:
+      - ./router/quagga/zebra.conf:/etc/quagga/zebra.conf
+      - ./router/quagga/ospfd.conf:/etc/quagga/ospfd.conf
+    networks:
+      backend_net:
+        ipv4_address: 172.16.123.158
+      router_12:
+        ipv4_address: 10.0.1.11
+      router_23:
+        ipv4_address: 10.0.1.18
+  router3:
+    build:
+      context: ./router
+    container_name: router3
+    privileged: true
+    cap_add:
+      - NET_ADMIN
+    # command: sh -c "/root/start.sh"
+    volumes:
+      - ./router/quagga/zebra.conf:/etc/quagga/zebra.conf
+      - ./router/quagga/ospfd.conf:/etc/quagga/ospfd.conf
+    networks:
+      client_net:
+        ipv4_address: 172.16.123.142
+      router_13:
+        ipv4_address: 10.0.1.3
+      router_23:
+        ipv4_address: 10.0.1.19
+networks:
+  public_net:
+    ipam:
+      config:
+        - subnet: 172.31.255.0/24
+          gateway: 172.31.255.254 #check
+  client_net:
+    ipam:
+      config:
+        - subnet: 172.16.123.128/28 
+          gateway: 172.16.123.129 #check
+  backend_net:
+    ipam:
+      config:
+        - subnet: 172.16.123.144/28
+          gateway: 172.16.123.145 #check
+  router_12:
+    ipam:
+      config:
+        - subnet: 10.0.1.8/29
+          gateway: 10.0.1.9 #check
+  router_13:
+    ipam:
+      config:
+        - subnet: 10.0.1.0/29
+          gateway: 10.0.1.1 #check
+  router_23:
+    ipam:
+      config:
+        - subnet: 10.0.1.16/29
+          gateway: 10.0.1.17 #check

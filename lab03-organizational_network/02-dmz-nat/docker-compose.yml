@@ -1,0 +1,90 @@
+version: '3'
+services:
+  external_host:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    privileged: true
+    container_name: external_host
+    ports: 
+      - 80
+    networks:
+      public_net:
+        ipv4_address: 172.31.255.100
+    command: >
+      sh -c "/sbin/ip route replace default via 172.31.255.253 && /root/sleep.sh"
+    tty: true
+    depends_on:
+      - router
+
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    privileged: true
+    container_name: client
+    ports: 
+      - 80
+    networks:
+      client_net:
+        ipv4_address: 10.0.1.100
+    command: >
+      sh -c "/sbin/ip route replace default via 10.0.1.254 && /root/sleep.sh"
+    tty: true
+    depends_on:
+      - router
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    privileged: true
+    container_name: backend
+    ports: 
+      - 80
+    networks:
+      backend_net:
+        ipv4_address: 10.0.2.100
+    command: >
+      sh -c "/sbin/ip route replace default via 10.0.2.254 && /root/sleep.sh"
+    tty: true
+    depends_on:
+      - router
+    
+  router:
+    build:
+      context: ./router
+      dockerfile: Dockerfile
+    hostname: router
+    privileged: true
+    networks:
+      client_net:
+        ipv4_address: 10.0.1.254
+      backend_net:
+        ipv4_address: 10.0.2.254
+      public_net:
+        ipv4_address: 172.31.255.253
+
+networks:
+  client_net:
+    ipam:
+      driver: default
+      config:
+        - subnet: 10.0.1.0/24
+          gateway: 10.0.1.1
+           
+  backend_net:
+    ipam:
+      driver: default
+      config:
+        - subnet: 10.0.2.0/24
+          gateway: 10.0.2.1
+
+  public_net:
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.31.255.0/24
+          gateway: 172.31.255.254
+
+

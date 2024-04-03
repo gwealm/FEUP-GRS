@@ -1,4 +1,3 @@
 #!/bin/bash
 
-## NAT ##
-ip r replace default via 172.31.255.254
+ip route replace default via 172.16.123.139

@@ -9,82 +9,142 @@ services:
     ports: 
       - 80
     networks:
-      public_net:
-        ipv4_address: 172.31.255.100
-    command: >
-      sh -c "/sbin/ip route replace default via 172.31.255.253 && /root/sleep.sh"
+      public-net:
+        ipv4_address: 172.31.255.1
+    command: "/root/sleep.sh"
     tty: true
     depends_on:
-      - router
+      - edge-router
 
-  client:
+  client-1:
     build:
       context: ./client
-      dockerfile: Dockerfile
     privileged: true
-    container_name: client
+    container_name: client-1
     ports: 
       - 80
     networks:
-      client_net:
-        ipv4_address: 10.0.1.100
+      client-net-1:
+        ipv4_address: 10.0.1.2
     command: >
       sh -c "/sbin/ip route replace default via 10.0.1.254 && /root/sleep.sh"
     tty: true
     depends_on:
       - router
 
-  backend:
+  client-2:
     build:
-      context: ./backend
-      dockerfile: Dockerfile
+      context: ./client
     privileged: true
-    container_name: backend
+    container_name: client-2
     ports: 
       - 80
     networks:
-      backend_net:
-        ipv4_address: 10.0.2.100
+      client-net-2:
+        ipv4_address: 10.0.2.2
     command: >
       sh -c "/sbin/ip route replace default via 10.0.2.254 && /root/sleep.sh"
     tty: true
     depends_on:
       - router
-    
+
+  server:
+    build:
+      context: ./server
+    privileged: true
+    container_name: server
+    ports: 
+      - 80
+    networks:
+      dmz-net:
+        ipv4_address: 172.16.123.130
+    command: >
+      sh -c "/sbin/ip route replace default via 172.16.123.141 && /root/sleep.sh"
+    tty: true
+    depends_on:
+      - edge-router
+
+  mail:
+    build:
+      context: ./server
+    privileged: true
+    container_name: mail
+    ports: 
+      - 80
+    networks:
+      dmz-net:
+        ipv4_address: 172.16.123.131
+    command: >
+      sh -c "/sbin/ip route replace default via 172.16.123.141 && /root/sleep.sh"
+    tty: true
+    depends_on:
+      - edge-router
+
+  dns:
+    build:
+      context: ./server
+    privileged: true
+    container_name: dns
+    ports: 
+      - 80
+    networks:
+      dmz-net:
+        ipv4_address: 172.16.123.132
+    command: >
+      sh -c "/sbin/ip route replace default via 172.16.123.141 && /root/sleep.sh"
+    tty: true
+    depends_on:
+      - edge-router
+
   router:
     build:
       context: ./router
-      dockerfile: Dockerfile
-    hostname: router
+    container_name: router
     privileged: true
     networks:
-      client_net:
+      client-net-1:
         ipv4_address: 10.0.1.254
-      backend_net:
+      client-net-2:
         ipv4_address: 10.0.2.254
-      public_net:
+      dmz-net:
+        ipv4_address: 172.16.123.142
+
+  edge-router:
+    build:
+      context: ./edge-router
+    container_name: edge-router
+    privileged: true
+    networks:
+      dmz-net:
+        ipv4_address: 172.16.123.141
+      public-net:
         ipv4_address: 172.31.255.253
 
 networks:
-  client_net:
+  client-net-1:
     ipam:
       driver: default
       config:
         - subnet: 10.0.1.0/24
           gateway: 10.0.1.1
            
-  backend_net:
+  client-net-2:
     ipam:
       driver: default
       config:
         - subnet: 10.0.2.0/24
           gateway: 10.0.2.1
 
-  public_net:
-    ipam:
-      driver: default
-      config:
-        - subnet: 172.31.255.0/24
-          gateway: 172.31.255.254
+  dmz-net:
+      ipam:
+        driver: default
+        config:
+          - subnet: 172.16.123.128/28
+            gateway: 172.16.123.129
 
-
+  public-net:
+      ipam:
+        driver: default
+        config:
+          - subnet: 172.31.255.0/24
+            gateway: 172.31.255.254

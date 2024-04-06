@@ -11,7 +11,8 @@ services:
     networks:
       public-net:
         ipv4_address: 172.31.255.1
-    command: "/root/sleep.sh"
+    command: >
+      sh -c "/sbin/ip route add 172.16.123.128/28 via 172.31.255.253 && /root/sleep.sh"
     tty: true
     depends_on:
       - edge-router

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ip route replace default via 172.31.255.254
-# ip route add 10.0.0.0/16 via 172.16.123.142
+ip route add 10.0.0.0/16 via 172.16.123.142
 
 # ## NAT ##
 iptables -t nat -F; iptables -t filter -F

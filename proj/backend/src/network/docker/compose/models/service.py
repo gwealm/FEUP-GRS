@@ -10,63 +10,115 @@ from .types import Duration, ByteValue, Value
 
 
 @dataclass
+class BindProperties:
+    """
+    Properties for bind mounts.
+    """
+
+    propagation: str
+    """
+    The propagation mode used inside for the bind.
+    """
+
+    create_host_path: bool
+    """
+    Creates a directory at the source path on host if there is nothing present.
+    """
+
+    selinux: Literal["z", "Z"]
+    """
+    Enable SELinux relabeling on the volume.
+    """
+
+    @staticmethod
+    def parse(bind_properties_spec: dict[str, Value]) -> "BindProperties":
+        """Parses a dictionary representing a bind mount specification into a BindProperties object.
+
+        Args:
+            bind_properties_spec (dict[str, Value]): configuration values for this BindProperties object.
+
+        Returns:
+            BindProperties: an object representing the BindProperties specification
+        """
+
+        return BindProperties(
+            propagation=bind_properties_spec.get("propagation"),
+            create_host_path=bind_properties_spec.get("create_host_path"),
+            selinux=bind_properties_spec.get("selinux"),
+        )
+
+
+@dataclass
+class VolumeProperties:
+    """
+    Properties for volumes.
+    """
+
+    nocopy: bool
+    """
+    Flag to disable copying of data from a container when a volume is created.
+    """
+
+    subpath: str
+    """
+    Path inside a volume to mount instead of the volume root.
+    """
+
+    @staticmethod
+    def parse(volume_properties_spec) -> "VolumeProperties":
+        """Parses a dictionary representing a volume specification into a VolumeProperties object.
+
+        Args:
+            volume_properties_spec (dict[str, Value]): configuration values for this volume.
+
+        Returns:
+            VolumeProperties: an object representing the VolumeProperties specification
+        """
+
+        return VolumeProperties(
+            nocopy=volume_properties_spec.get("nocopy"),
+            subpath=volume_properties_spec.get("subpath"),
+        )
+
+
+@dataclass
+class TMPFSProperties:
+    """
+    Properties for TMPFS volumes.
+    """
+
+    size: int | ByteValue
+    """
+    The size for the tmpfs mount in bytes
+    """
+
+    mode: int
+    """
+    The file mode for the tmpfs mount as Unix permission bits as an octal number
+    """
+
+    @staticmethod
+    def parse(tmpfs_properties_spec: dict[str, Value]) -> "TMPFSProperties":
+        """Parses a dictionary representing a TMPFS volume specification into a TMPFSProperties object.
+
+        Args:
+            tmpfs_properties_spec (dict[str, Value]): configuration values for this TMPFSProperties object.
+
+        Returns:
+            TMPFSProperties: an object representing the TMPFSProperties specification
+        """
+
+        return TMPFSProperties(
+            size=tmpfs_properties_spec.get("size"),
+            mode=tmpfs_properties_spec.get("mode"),
+        )
+
+
+@dataclass
 class Volume:
     """
     Volume mounted on a container through a filesystem bind.
     """
-
-    @dataclass
-    class BindProperties:
-        """
-        Properties for bind mounts.
-        """
-
-        propagation: str
-        """
-        The propagation mode used inside for the bind.
-        """
-
-        create_host_path: bool
-        """
-        Creates a directory at the source path on host if there is nothing present.
-        """
-
-        selinux: Literal["z", "Z"]
-        """
-        Enable SELinux relabeling on the volume.
-        """
-
-    @dataclass
-    class VolumeProperties:
-        """
-        Properties for volumes.
-        """
-
-        nocopy: bool
-        """
-        Flag to disable copying of data from a container when a volume is created.
-        """
-
-        subpath: str
-        """
-        Path inside a volume to mount instead of the volume root.
-        """
-
-    @dataclass
-    class TMPFSProperties:
-        """
-        Properties for TMPFS volumes.
-        """
-
-        size: int | ByteValue
-        """
-        The size for the tmpfs mount in bytes
-        """
-
-        mode: int
-        """
-        The file mode for the tmpfs mount as Unix permission bits as an octal number
-        """
 
     type: Literal["volume", "bind", "tmpfs", "npipe", "cluster"]
     """
@@ -108,6 +160,49 @@ class Volume:
     The consistency requirements for the the mount. Values are platform dependent.
     """
 
+    @staticmethod
+    def parse(volume_spec: dict[str, Value]) -> "Volume":
+        """_summary_
+
+        Args:
+            volume_spec (dict[str, Value]): _description_
+
+        Returns:
+            Volume: _description_
+        """
+
+        source = volume_spec.get("source")
+        target = volume_spec.get("target", source)
+        read_only = volume_spec.get("read_only", None)
+
+        if "bind" in volume_spec:
+            bind = BindProperties.parse(volume_spec.get("bind"))
+        else:
+            bind = None
+
+        if "read_only" in volume_spec:
+            volume = VolumeProperties.parse(volume_spec.get("volume", {}))
+        else:
+            volume = None
+
+        if "tmpfs" in volume_spec:
+            tmpfs = TMPFSProperties.parse(volume_spec.get("tmpfs", {}))
+        else:
+            tmpfs = None
+
+        consistency = volume_spec.get("consistency", None)
+
+        return Volume(
+            type=volume_spec.get("type"),
+            source=source,
+            target=target,
+            read_only=read_only,
+            bind=bind,
+            volume=volume,
+            tmpfs=tmpfs,
+            consistency=consistency,
+        )
+
 
 @dataclass
 class FailureRestartPolicy:
@@ -119,6 +214,11 @@ class FailureRestartPolicy:
     """
     Max number of retries for terminated containers.
     """
+
+    def __repr__(self) -> str:
+        max_retries_str = "" if self.max_retries is not None else f":{self.max_retries}"
+
+        return f"on-failure{max_retries_str}"
 
 
 @dataclass
@@ -162,6 +262,27 @@ class PortSpec:
     The port mode.
     """
 
+    @staticmethod
+    def parse(port_name: str, port_spec: dict[str, Value]) -> "PortSpec":
+        """Parses a dictionary representing a port specification into a PortSpec object.
+
+        Args:
+            port_spec (dict[str, Value]): configuration values for this PortSpec object.
+
+        Returns:
+            PortSpec: an object representing the PortSpec specification
+        """
+
+        return PortSpec(
+            name=port_spec.get("name", port_name),
+            target=port_spec.get("target"),
+            published=port_spec.get("published"),
+            app_protocol=port_spec.get("app_protocol"),
+            host_ip=port_spec.get("host_ip", "0.0.0.0"),
+            protocol=port_spec.get("protocol", "tcp"),
+            mode=port_spec.get("mode", "ingress"),
+        )
+
 
 @dataclass
 class NetworkSpec:
@@ -202,6 +323,26 @@ class NetworkSpec:
     Indicates in which order Compose connects the service’s containers to its networks.
     """
 
+    @staticmethod
+    def parse(network_spec: dict[str, Value]) -> "NetworkSpec":
+        """Parses a dictionary representing a network specification into a NetworkSpec object.
+
+        Args:
+            network_spec (dict[str, Value]): configuration values for this NetworkSpec object.
+
+        Returns:
+            NetworkSpec: an object representing the NetworkSpec specification
+        """
+
+        return NetworkSpec(
+            aliases=network_spec.get("aliases", None),
+            ipv4_address=network_spec.get("ipv4_address", None),
+            ipv6_address=network_spec.get("ipv6_address", None),
+            link_local_ips=network_spec.get("link_local_ips", None),
+            mac_address=network_spec.get("mac_address", None),
+            priority=network_spec.get("priority", 0),
+        )
+
 
 @dataclass
 class LoggingConfig:
@@ -218,6 +359,22 @@ class LoggingConfig:
     """
     Driver specific options.
     """
+
+    @staticmethod
+    def parse(logging_config_spec: dict[str, Value]) -> "LoggingConfig":
+        """Parses a dictionary representing a logging configuration into a LoggingConfig object.
+
+        Args:
+            logging_config_spec (dict[str, Value]): configuration values for this LoggingConfig object.
+
+        Returns:
+            LoggingConfig: an object representing the LoggingConfig specification
+        """
+
+        return LoggingConfig(
+            driver=logging_config_spec.get("driver"),
+            options=logging_config_spec.get("options", {}),
+        )
 
 
 @dataclass
@@ -276,6 +433,20 @@ class HealthCheck:
     """
     """
 
+    @staticmethod
+    def parse(health_check_spec: dict[str, Value]) -> "HealthCheck":
+
+        return HealthCheck(
+            test=health_check_spec.get("test"),
+            retries=health_check_spec.get("retries", 0),
+            disable=health_check_spec.get("disable", False),
+            interval=Duration.from_string(health_check_spec.get("interval", "0s")),
+            timeout=Duration.from_string(health_check_spec.get("timeout", "0s")),
+            start_period=Duration.from_string(
+                health_check_spec.get("start_period", "0s")
+            ),
+        )
+
 
 @dataclass
 class ExtensionsSpec:
@@ -293,6 +464,22 @@ class ExtensionsSpec:
     Defines the name of the service being referenced as a base.
     """
 
+    @staticmethod
+    def parse(extensions_spec: dict[str, Value]) -> "ExtensionsSpec":
+        """Parses a dictionary representing a extensions specification into a ExtensionsSpec object.
+
+        Args:
+            extensions_spec (dict[str, Value]): configuration values for this ExtensionsSpec object.
+
+        Returns:
+            ExtensionsSpec: an object representing the ExtensionsSpec specification
+        """
+
+        return ExtensionsSpec(
+            file=extensions_spec.get("file"),
+            service=extensions_spec.get("service"),
+        )
+
 
 @dataclass
 class EnvFile:
@@ -309,6 +496,22 @@ class EnvFile:
     """
     Whether this file is required to exist.
     """
+
+    @staticmethod
+    def parse(env_file_spec: dict[str, Value]) -> "EnvFile":
+        """Parses a dictionary representing an environment file into an EnvFile object.
+
+        Args:
+            env_file_spec (dict[str, Value]): configuration values for this EnvFile object.
+
+        Returns:
+            EnvFile: an object representing the EnvFile specification
+        """
+
+        return EnvFile(
+            path=env_file_spec.get("path"),
+            required=env_file_spec.get("required", False),
+        )
 
 
 @dataclass
@@ -338,6 +541,24 @@ class DevelopmentWatch:
     so that the latter is always running with up-to-date content.
     """
 
+    @staticmethod
+    def parse(development_watch_spec: dict[str, Value]) -> "DevelopmentWatch":
+        """Parses a dictionary representing a development watch specification into a DevelopmentWatch object.
+
+        Args:
+            development_watch_spec (dict[str, Value]): configuration values for this DevelopmentWatch object.
+
+        Returns:
+            DevelopmentWatch: an object representing the DevelopmentWatch specification
+        """
+
+        return DevelopmentWatch(
+            action=development_watch_spec.get("action"),
+            path=development_watch_spec.get("path"),
+            ignore=development_watch_spec.get("ignore", None),
+            target=development_watch_spec.get("target", None),
+        )
+
 
 @dataclass
 class Development:
@@ -349,6 +570,24 @@ class Development:
     """
     Defines a list of rules that control automatic service updates based on local file changes.
     """
+
+    @staticmethod
+    def parse(development_spec: dict[str, Value]) -> "Development":
+        """Parses a dictionary representing a development specification into a Development object.
+
+        Args:
+            development_spec (dict[str, Value]): configuration values for this Development object.
+
+        Returns:
+            Development: an object representing the Development specification
+        """
+
+        return Development(
+            watch=[
+                DevelopmentWatch.parse(watch_spec)
+                for watch_spec in development_spec.get("watch", [])
+            ]
+        )
 
 
 @dataclass
@@ -389,6 +628,26 @@ class UpdateConfig:
     Order of operations during updates.
     """
 
+    @staticmethod
+    def parse(update_config_spec: dict[str, Value]) -> "UpdateConfig":
+        """Parses a dictionary representing an update configuration into an UpdateConfig object.
+
+        Args:
+            update_config_spec (dict[str, Value]): configuration values for this UpdateConfig object.
+
+        Returns:
+            UpdateConfig: an object representing the UpdateConfig specification
+        """
+
+        return UpdateConfig(
+            parallelism=update_config_spec.get("parallelism"),
+            delay=Duration.from_string(update_config_spec.get("delay", "0s")),
+            failure_action=update_config_spec.get("failure_action"),
+            monitor=Duration.from_string(update_config_spec.get("monitor", "0s")),
+            max_failure_ratio=update_config_spec.get("max_failure_ratio"),
+            order=update_config_spec.get("order"),
+        )
+
 
 @dataclass
 class RollbackConfig:
@@ -426,6 +685,26 @@ class RollbackConfig:
     Order of operations during rollbacks.
     """
 
+    @staticmethod
+    def parse(rollback_config_spec: dict[str, Value]) -> "RollbackConfig":
+        """Parses a dictionary representing a rollback configuration into a RollbackConfig object.
+
+        Args:
+            rollback_config_spec (dict[str, Value]): configuration values for this RollbackConfig object.
+
+        Returns:
+            RollbackConfig: an object representing the RollbackConfig specification
+        """
+
+        return RollbackConfig(
+            parallelism=rollback_config_spec.get("parallelism"),
+            delay=Duration.from_string(rollback_config_spec.get("delay", "0s")),
+            failure_action=rollback_config_spec.get("failure_action"),
+            monitor=Duration.from_string(rollback_config_spec.get("monitor", "0s")),
+            max_failure_ratio=rollback_config_spec.get("max_failure_ratio"),
+            order=rollback_config_spec.get("order"),
+        )
+
 
 @dataclass
 class RestartPolicy:
@@ -452,6 +731,24 @@ class RestartPolicy:
     """
     How long to wait before deciding if a restart has succeeded
     """
+
+    @staticmethod
+    def parse(restart_policy_spec: dict[str, Value]) -> "RestartPolicy":
+        """Parses a dictionary representing a restart policy specification into a RestartPolicy object.
+
+        Args:
+            restart_policy_spec (dict[str, Value]): configuration values for this RestartPolicy object.
+
+        Returns:
+            RestartPolicy: an object representing the RestartPolicy specification
+        """
+
+        return RestartPolicy(
+            condition=restart_policy_spec.get("condition"),
+            max_attempts=restart_policy_spec.get("max_attempts"),
+            delay=Duration.from_string(restart_policy_spec.get("delay", "0s")),
+            window=Duration.from_string(restart_policy_spec.get("window", "0s")),
+        )
 
 
 @dataclass
@@ -485,6 +782,25 @@ class Devices:
     Driver specific options.
     """
 
+    @staticmethod
+    def parse(devices_spec: dict[str, Value]) -> "Devices":
+        """Parses a dictionary representing a devices specification into a Devices object.
+
+        Args:
+            devices_spec (dict[str, Value]): configuration values for this Devices object.
+
+        Returns:
+            Devices: an object representing the Devices specification
+        """
+
+        return Devices(
+            capabilities=devices_spec.get("capabilities"),
+            driver=devices_spec.get("driver"),
+            count=devices_spec.get("count"),
+            device_ids=devices_spec.get("device_ids"),
+            options=devices_spec.get("options"),
+        )
+
 
 @dataclass
 class ResourceSpec:
@@ -513,6 +829,24 @@ class ResourceSpec:
     Configures reservations of the devices a container can use
     """
 
+    @staticmethod
+    def parse(resource_spec_spec: dict[str, Value]) -> "ResourceSpec":
+        """Parses a dictionary representing a resource specification into a ResourceSpec object.
+
+        Args:
+            resource_spec_spec (dict[str, Value]): configuration values for this ResourceSpec object.
+
+        Returns:
+            ResourceSpec: an object representing the ResourceSpec specification
+        """
+
+        return ResourceSpec(
+            cpus=resource_spec_spec.get("cpus"),
+            memory=ByteValue.from_string(resource_spec_spec.get("memory")),
+            pids=resource_spec_spec.get("pids"),
+            devices=[Devices.parse(d) for d in resource_spec_spec.get("devices", [])],
+        )
+
 
 @dataclass
 class Resources:
@@ -529,6 +863,22 @@ class Resources:
     """
     The platform must guarantee the container can allocate at least the configured amount.
     """
+
+    @staticmethod
+    def parse(resources_spec: dict[str, Value]) -> "Resources":
+        """Parses a dictionary representing a resources specification into a Resources object.
+
+        Args:
+            resources_spec (dict[str, Value]): configuration values for this Resources object.
+
+        Returns:
+            Resources: an object representing the Resources specification
+        """
+
+        return Resources(
+            limits=ResourceSpec.parse(resources_spec.get("limits")),
+            reservations=ResourceSpec.parse(resources_spec.get("reservations")),
+        )
 
 
 @dataclass
@@ -547,6 +897,22 @@ class Placement:
     """
     Defines a required property the platform's node should fulfill to run the service container.
     """
+
+    @staticmethod
+    def parse(placement_spec: dict[str, Value]) -> "Placement":
+        """Parses a dictionary representing a placement specification into a Placement object.
+
+        Args:
+            placement_spec (dict[str, Value]): configuration values for this Placement object.
+
+        Returns:
+            Placement: an object representing the Placement specification
+        """
+
+        return Placement(
+            constraints=placement_spec.get("constraints", None),
+            preferences=placement_spec.get("preferences", None),
+        )
 
 
 @dataclass
@@ -596,6 +962,30 @@ class Deployment(HasLabels):
     Defines the replication model used to run the service on the platform
     """
 
+    @staticmethod
+    def parse(deployment_spec: dict[str, Value]) -> "Deployment":
+        """ """
+
+        endpoint_mode = deployment_spec.get("endpoint_mode")
+        if endpoint_mode not in ["vip", "dnsrr"]:
+            raise ValueError(f"Invalid endpoint_mode: {endpoint_mode}")
+
+        deployment = Deployment(
+            endpoint_mode=endpoint_mode,
+            placement=Placement.parse(deployment_spec.get("placement")),
+            replicas=deployment_spec.get("replicas"),
+            resources=Resources.parse(deployment_spec.get("resources")),
+            restart_policy=RestartPolicy.parse(deployment_spec.get("restart_policy")),
+            rollback_config=RollbackConfig.parse(
+                deployment_spec.get("rollback_config")
+            ),
+            update_config=UpdateConfig.parse(deployment_spec.get("update_config")),
+            mode=deployment_spec.get("mode", "replicated"),
+        )
+        deployment.labels = (deployment_spec.get("labels", {}),)
+
+        return deployment
+
 
 @dataclass
 class DependencyConfig:
@@ -620,6 +1010,23 @@ class DependencyConfig:
     When set to false Compose only warns you when the dependency service isn't started or available
     """
 
+    @staticmethod
+    def parse(dependency_config_spec: dict[str, Value]) -> "DependencyConfig":
+        """Parses a dictionary representing a dependency configuration into a DependencyConfig object.
+
+        Args:
+            dependency_config_spec (dict[str, Value]): configuration values for this DependencyConfig object.
+
+        Returns:
+            DependencyConfig: an object representing the DependencyConfig specification
+        """
+
+        return DependencyConfig(
+            restart=dependency_config_spec.get("restart"),
+            condition=dependency_config_spec.get("condition"),
+            required=dependency_config_spec.get("required"),
+        )
+
 
 @dataclass
 class CredentialSpecFile:
@@ -631,6 +1038,21 @@ class CredentialSpecFile:
     """
     The path of the file containing the CredentialSpec
     """
+
+    @staticmethod
+    def parse(credential_spec_file_spec: dict[str, Value]) -> "CredentialSpecFile":
+        """Parses a dictionary representing a credential specification file into a CredentialSpecFile object.
+
+        Args:
+            credential_spec_file_spec (dict[str, Value]): configuration values for this CredentialSpecFile object.
+
+        Returns:
+            CredentialSpecFile: an object representing the CredentialSpecFile specification
+        """
+
+        return CredentialSpecFile(
+            file=credential_spec_file_spec.get("file"),
+        )
 
 
 @dataclass
@@ -644,6 +1066,23 @@ class CredentialSpecRegistry:
     The path of the registry containing the CredentialSpec
     """
 
+    @staticmethod
+    def parse(
+        credential_spec_registry_spec: dict[str, Value]
+    ) -> "CredentialSpecRegistry":
+        """Parses a dictionary representing a credential specification registry into a CredentialSpecRegistry object.
+
+        Args:
+            credential_spec_registry_spec (dict[str, Value]): configuration values for this CredentialSpecRegistry object.
+
+        Returns:
+            CredentialSpecRegistry: an object representing the CredentialSpecRegistry specification
+        """
+
+        return CredentialSpecRegistry(
+            registry=credential_spec_registry_spec.get("registry"),
+        )
+
 
 @dataclass
 class CredentialSpecConfig:
@@ -655,6 +1094,21 @@ class CredentialSpecConfig:
     """
     The path of the config containing the CredentialSpec
     """
+
+    @staticmethod
+    def parse(credential_spec_config_spec: dict[str, Value]) -> "CredentialSpecConfig":
+        """Parses a dictionary representing a credential specification config into a CredentialSpecConfig object.
+
+        Args:
+            credential_spec_config_spec (dict[str, Value]): configuration values for this CredentialSpecConfig object.
+
+        Returns:
+            CredentialSpecConfig: an object representing the CredentialSpecConfig specification
+        """
+
+        return CredentialSpecConfig(
+            config=credential_spec_config_spec.get("config"),
+        )
 
 
 @dataclass
@@ -679,6 +1133,24 @@ class BlockIOConfig:
         Number of bytes per second.
         """
 
+        @staticmethod
+        def parse(bps_spec: dict[str, Value]) -> "BlockIOConfig.BPS":
+            """Parses a dictionary representing a BPS configuration into a BPS object.
+
+            Args:
+                bps_spec (dict[str, Value]): configuration values for this BPS object.
+
+            Returns:
+                BlockIOConfig.BPS: an object representing the BPS specification
+            """
+
+            try:
+                rate = int(bps_spec.get("rate"))
+            except ValueError:
+                rate = ByteValue.from_string(bps_spec.get("rate"))
+
+            return BlockIOConfig.BPS(path=bps_spec.get("path"), rate=rate)
+
     @dataclass
     class IOPS:
         """
@@ -695,6 +1167,21 @@ class BlockIOConfig:
         Number of operations per second.
         """
 
+        @staticmethod
+        def parse(iops_spec: dict[str, Value]) -> "BlockIOConfig.IOPS":
+            """Parses a dictionary representing a IOPS configuration into a IOPS object.
+
+            Args:
+                iops_spec (dict[str, Value]): configuration values for this IOPS object.
+
+            Returns:
+                BlockIOConfig.IOPS: an object representing the IOPS specification
+            """
+
+            return BlockIOConfig.IOPS(
+                path=iops_spec.get("path"), rate=int(iops_spec.get("rate"))
+            )
+
     @dataclass
     class WeightDevice:
         """
@@ -710,6 +1197,22 @@ class BlockIOConfig:
         """
         Integer value between 10 and 1000.
         """
+
+        @staticmethod
+        def parse(weight_device_spec: dict[str, Value]) -> "BlockIOConfig.WeightDevice":
+            """Parses a dictionary representing a WeightDevice configuration into a WeightDevice object.
+
+            Args:
+                weight_device_spec (dict[str, Value]): configuration values for this WeightDevice object.
+
+            Returns:
+                BlockIOConfig.WeightDevice: an object representing the WeightDevice specification
+            """
+
+            return BlockIOConfig.WeightDevice(
+                path=weight_device_spec.get("path"),
+                weight=int(weight_device_spec.get("weight")),
+            )
 
     device_read_bps: list[BPS]
     """
@@ -740,6 +1243,33 @@ class BlockIOConfig:
     Modify the proportion of bandwidth allocated to a service relative to other services
     """
 
+    @staticmethod
+    def parse(block_io_config_spec: dict[str, Value]) -> "BlockIOConfig":
+
+        return BlockIOConfig(
+            device_read_bps=[
+                BlockIOConfig.BPS.parse(bps_spec)
+                for bps_spec in block_io_config_spec.get("device_read_bps", [])
+            ],
+            device_write_bps=[
+                BlockIOConfig.BPS.parse(bps_spec)
+                for bps_spec in block_io_config_spec.get("device_write_bps", [])
+            ],
+            device_read_iops=[
+                BlockIOConfig.IOPS.parse(iops_spec)
+                for iops_spec in block_io_config_spec.get("device_read_iops", [])
+            ],
+            device_write_iops=[
+                BlockIOConfig.IOPS.parse(iops_spec)
+                for iops_spec in block_io_config_spec.get("device_write_iops", [])
+            ],
+            weight_devices=[
+                BlockIOConfig.WeightDevice.parse(weight_device_spec)
+                for weight_device_spec in block_io_config_spec.get("weight_devices", [])
+            ],
+            weight=int(block_io_config_spec.get("weight", 500)),
+        )
+
 
 @dataclass
 class ULimits:
@@ -763,6 +1293,22 @@ class ULimits:
         Hard limit for this container. Cannot be changed by non-root processes.
         """
 
+        @staticmethod
+        def parse(number_of_files_spec: dict[str, Value]) -> "ULimits.NumberOfFiles":
+            """Parses a dictionary representing a NumberOfFiles configuration into a NumberOfFiles object.
+
+            Args:
+                number_of_files_spec (dict[str, Value]): configuration values for this NumberOfFiles object.
+
+            Returns:
+                ULimits.NumberOfFiles: an object representing the NumberOfFiles specification
+            """
+
+            return ULimits.NumberOfFiles(
+                soft=int(number_of_files_spec.get("soft")),
+                hard=int(number_of_files_spec.get("hard")),
+            )
+
     nofile: NumberOfFiles
     """
     Defines soft and hard limits for a container.
@@ -772,6 +1318,24 @@ class ULimits:
     """
     Defines the maximum number of processes that can be running.
     """
+
+    @staticmethod
+    def parse(ulimits_spec: dict[str, Value]) -> "ULimits":
+        """Parses a dictionary representing a ULimits configuration into a ULimits object.
+
+        Args:
+            ulimits_spec (dict[str, Value]): configuration values for this ULimits object.
+
+        Returns:
+            ULimits: an object representing the ULimits specification
+        """
+
+        return ULimits(
+            nofile=ULimits.NumberOfFiles.parse(
+                number_of_files_spec=ulimits_spec.get("nofile", {})
+            ),
+            nproc=int(ulimits_spec.get("nproc", 65535)),
+        )
 
 
 @dataclass
@@ -805,6 +1369,25 @@ class Secret:
     The permissions for the file to be mounted in the service's task containers, in octal notation.
     """
 
+    @staticmethod
+    def parse(secret_spec: dict[str, Value]) -> "Secret":
+        """Parses a dictionary representing a Secret configuration into a Secret object.
+
+        Args:
+            secret_spec (dict[str, Value]): configuration values for this Secret object.
+
+        Returns:
+            Secret: an object representing the Secret specification
+        """
+
+        return Secret(
+            source=secret_spec.get("source"),
+            target=secret_spec.get("target"),
+            uid=secret_spec.get("uid"),
+            gid=secret_spec.get("gid"),
+            mode=int(secret_spec.get("mode", 0o444)),
+        )
+
 
 @dataclass
 class Config:
@@ -837,6 +1420,25 @@ class Config:
     The permissions for the file to be mounted in the service's task containers, in octal notation.
     """
 
+    @staticmethod
+    def parse(config_spec: dict[str, Value]) -> "Config":
+        """Parses a dictionary representing a Config configuration into a Config object.
+
+        Args:
+            config_spec (dict[str, Value]): configuration values for this Config object.
+
+        Returns:
+            Config: an object representing the Config specification
+        """
+
+        return Config(
+            source=config_spec.get("source"),
+            target=config_spec.get("target"),
+            uid=config_spec.get("uid"),
+            gid=config_spec.get("gid"),
+            mode=int(config_spec.get("mode", 0o444)),
+        )
+
 
 @dataclass
 class BuildSecretMap:
@@ -868,6 +1470,25 @@ class BuildSecretMap:
     """
     The permissions for the file to be mounted in the service's task containers, in octal notation.
     """
+
+    @staticmethod
+    def parse(build_secret_map_spec: dict[str, Value]) -> "BuildSecretMap":
+        """Parses a dictionary representing a BuildSecretMap configuration into a BuildSecretMap object.
+
+        Args:
+            build_secret_map_spec (dict[str, Value]): configuration values for this BuildSecretMap object.
+
+        Returns:
+            BuildSecretMap: an object representing the BuildSecretMap specification
+        """
+
+        return BuildSecretMap(
+            source=build_secret_map_spec.get("source"),
+            target=build_secret_map_spec.get("target"),
+            uid=build_secret_map_spec.get("uid"),
+            gid=build_secret_map_spec.get("gid"),
+            mode=int(build_secret_map_spec.get("mode", 0o444)),
+        )
 
 
 @dataclass
@@ -997,6 +1618,40 @@ class BuildSpec(HasLabels):
     """
     Defines a list of target platforms for built images.
     """
+
+    @staticmethod
+    def parse(build_spec_spec: dict[str, Value]) -> "BuildSpec":
+        """Parses a dictionary representing a BuildSpec configuration into a BuildSpec object.
+
+        Args:
+            build_spec_spec (dict[str, Value]): configuration values for this BuildSpec object.
+
+        Returns:
+            BuildSpec: an object representing the BuildSpec specification
+        """
+
+        return BuildSpec(
+            context=build_spec_spec.get("context"),
+            dockerfile=build_spec_spec.get("dockerfile"),
+            dockerfile_inline=build_spec_spec.get("dockerfile_inline"),
+            args=build_spec_spec.get("args"),
+            ssh=build_spec_spec.get("ssh"),
+            cache_from=build_spec_spec.get("cache_from"),
+            cache_to=build_spec_spec.get("cache_to"),
+            additional_contexts=build_spec_spec.get("additional_contexts"),
+            extra_hosts=build_spec_spec.get("extra_hosts"),
+            isolation=build_spec_spec.get("isolation"),
+            privileged=build_spec_spec.get("privileged"),
+            no_cache=build_spec_spec.get("no_cache"),
+            pull=build_spec_spec.get("pull"),
+            network=build_spec_spec.get("network"),
+            shm_size=build_spec_spec.get("shm_size"),
+            target=build_spec_spec.get("target"),
+            secrets=build_spec_spec.get("secrets"),
+            tags=build_spec_spec.get("tags"),
+            ulimits=build_spec_spec.get("ulimits"),
+            platforms=build_spec_spec.get("platforms"),
+        )
 
 
 @dataclass(kw_only=True, slots=True, frozen=True)
@@ -1440,3 +2095,100 @@ class Service(HasLabels):
     """
     Overrides the container 's working directory which is specified by the image.
     """
+
+    @staticmethod
+    def parse(service_spec: dict[str, Value]):
+        """
+        Parses a service specification and returns a Service object.
+
+        :param service_name: The name of the service.
+        :type service_name: str
+        :param service_spec: The service specification.
+        :type service_spec: dict[str, Value]
+        :return: A Service object.
+        :rtype: Service
+        """
+
+        working_dir = service_spec.get("working_dir", None)
+        image = service_spec.get("image", None)
+        command = service_spec.get("command", None)
+        entrypoint = service_spec.get("entrypoint", None)
+        env_file = service_spec.get("env_file", None)
+        environment = service_spec.get("environment", None)
+        expose = service_spec.get("expose", None)
+        links = service_spec.get("links", None)
+        volumes = service_spec.get("volumes", None)
+        volumes_from = service_spec.get("volumes_from", None)
+        depends_on = service_spec.get("depends_on", None)
+        networks = service_spec.get("networks", None)
+        secrets = service_spec.get("secrets", None)
+        build = service_spec.get("build", None)
+        logging = service_spec.get("logging", None)
+        healthcheck = service_spec.get("healthcheck", None)
+        depends_on = service_spec.get("depends_on", None)
+        deploy = service_spec.get("deploy", None)
+        mode = service_spec.get("mode", None)
+        restart = service_spec.get("restart", None)
+        stop_grace_period = service_spec.get("stop_grace_period", None)
+        stop_signal = service_spec.get("stop_signal", None)
+        sysctls = service_spec.get("sysctls", None)
+        tmpfs = service_spec.get("tmpfs", None)
+        cap_add = service_spec.get("cap_add", None)
+        cap_drop = service_spec.get("cap_drop", None)
+
+        service = Service(
+            image=image,
+            command=command,
+            entrypoint=entrypoint,
+            env_file=env_file,
+            environment=environment,
+            expose=expose,
+            links=links,
+            volumes=volumes,
+            volumes_from=volumes_from,
+            depends_on=depends_on,
+            networks=networks,
+            secrets=secrets,
+            build=build,
+            logging=logging,
+            healthcheck=healthcheck,
+            deploy=deploy,
+            restart=restart,
+            stop_grace_period=stop_grace_period,
+            stop_signal=stop_signal,
+            tmpfs=tmpfs,
+            cap_add=cap_add,
+            cap_drop=cap_drop,
+            working_dir=working_dir,
+            mac_address=service_spec.get("mac_address", None),
+            mem_limit=service_spec.get("mem_limit", None),
+            mem_reservation=service_spec.get("mem_reservation", None),
+            mem_swappiness=service_spec.get("mem_swappiness", None),
+            memswap_limit=service_spec.get("memswap_limit", None),
+            network_mode=service_spec.get("network_mode", None),
+            oom_kill_disable=service_spec.get("oom_kill_disable", None),
+            oom_score_adj=service_spec.get("oom_score_adj", None),
+            pid=service_spec.get("pid", None),
+            pids_limit=service_spec.get("pids_limit", None),
+            platform=service_spec.get("platform", None),
+            ports=service_spec.get("ports", None),
+            privileged=service_spec.get("privileged", None),
+            profiles=service_spec.get("profiles", None),
+            pull_policy=service_spec.get("pull_policy", None),
+            read_only=service_spec.get("read_only", None),
+            runtime=service_spec.get("runtime", None),
+            scale=service_spec.get("scale", None),
+            security_opt=service_spec.get("security_opt", None),
+            shm_size=service_spec.get("shm_size", None),
+            stdin_open=service_spec.get("stdin_open", None),
+            storage_opt=service_spec.get("storage_opt", None),
+            sysctl=sysctls,
+            tty=service_spec.get("tty", None),
+            ulimits=service_spec.get("ulimits", None),
+            user=service_spec.get("user", None),
+            userns_mode=service_spec.get("userns_mode", None),
+            uts=service_spec.get("uts", None),
+        )
+        # service.labels = service_spec.get("labels", None)
+
+        return service

@@ -1,5 +1,10 @@
-from network.docker.compose.models import Service
+from network.docker.compose.loader import DockerComposeManifestHandler
+import pprint
 
-service = Service()
+handler = DockerComposeManifestHandler()
 
-print(service)
+manifest_template = handler.load(
+    "/home/naapperas/workspace/uni/4-ano/grs/proj/backend/templates/docker-compose.yaml"
+)
+
+pprint.pprint(manifest_template.compile())

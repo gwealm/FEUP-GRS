@@ -23,6 +23,19 @@ class ByteValue:
     value: int
     unit: BYTE_VALUE_UNITS
 
+    @classmethod
+    def from_string(cls, byte_value_str: str):
+
+        pattern = r"(?:(\d+)(b|kb|k|mb|m|gb|g))"
+
+        matches = re.findall(pattern, byte_value_str)
+
+        value, unit = matches[0], matches[1]
+        _, value = value
+        _, unit = unit
+
+        return cls(value, unit)
+
 
 DURATION_UNITS = Literal["us", "ms", "s", "m", "h"]
 

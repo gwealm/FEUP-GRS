@@ -16,11 +16,11 @@ class DockerComposeManifest:
     """
 
     version: float = 3.8
-    services: dict[str, Service | str] = field(default_factory=dict)
-    networks: dict[str, Network | str] = field(default_factory=dict)
-    volumes: dict[str, Volume | str] = field(default_factory=dict)
-    secrets: dict[str, Secret | str] = field(default_factory=dict)
-    configs: dict[str, Config | str] = field(default_factory=dict)
+    services: dict[str, Service] | list[str] = field(default_factory=dict)
+    networks: dict[str, Network] | list[str] = field(default_factory=dict)
+    volumes: dict[str, Volume] | list[str] = field(default_factory=dict)
+    secrets: dict[str, Secret] | list[str] = field(default_factory=dict)
+    configs: dict[str, Config] | list[str] = field(default_factory=dict)
 
 
 class DockerComposeManifestTemplate:

@@ -41,10 +41,14 @@ class BindProperties:
             BindProperties: an object representing the BindProperties specification
         """
 
+        selinux = bind_properties_spec.get("selinux")
+        if selinux not in ('z', 'Z'):
+            raise ValueError(f"Unexpected value for selinux: {selinux}")
+
         return BindProperties(
             propagation=bind_properties_spec.get("propagation"),
             create_host_path=bind_properties_spec.get("create_host_path"),
-            selinux=bind_properties_spec.get("selinux"),
+            selinux=selinux,
         )
 
 
@@ -108,8 +112,12 @@ class TMPFSProperties:
             TMPFSProperties: an object representing the TMPFSProperties specification
         """
 
+        size = tmpfs_properties_spec.get("size")
+        if isinstance(size, str):
+            size = ByteValue.from_string(size)
+
         return TMPFSProperties(
-            size=tmpfs_properties_spec.get("size"),
+            size=size,
             mode=tmpfs_properties_spec.get("mode"),
         )
 
@@ -171,29 +179,30 @@ class Volume:
             Volume: _description_
         """
 
+        volume_type=volume_spec.get("type")
+        if volume_type not in ("volume", "bind", "tmpfs", "npipe", "cluster"):
+            raise ValueError(f"Unexpected value for type: {type}")
+
         source = volume_spec.get("source")
         target = volume_spec.get("target", source)
         read_only = volume_spec.get("read_only", None)
 
+        bind = None
         if "bind" in volume_spec:
             bind = BindProperties.parse(volume_spec.get("bind"))
-        else:
-            bind = None
 
+        volume = None
         if "read_only" in volume_spec:
             volume = VolumeProperties.parse(volume_spec.get("volume", {}))
-        else:
-            volume = None
 
+        tmpfs = None
         if "tmpfs" in volume_spec:
             tmpfs = TMPFSProperties.parse(volume_spec.get("tmpfs", {}))
-        else:
-            tmpfs = None
 
         consistency = volume_spec.get("consistency", None)
 
         return Volume(
-            type=volume_spec.get("type"),
+            type=volume_type,
             source=source,
             target=target,
             read_only=read_only,
@@ -273,6 +282,10 @@ class PortSpec:
             PortSpec: an object representing the PortSpec specification
         """
 
+        mode = port_spec.get("mode", "ingress")
+        if mode not in ("host", "ingress"):
+            raise ValueError(f"Unexpected value for mode: {mode}")
+
         return PortSpec(
             name=port_spec.get("name", port_name),
             target=port_spec.get("target"),
@@ -280,7 +293,7 @@ class PortSpec:
             app_protocol=port_spec.get("app_protocol"),
             host_ip=port_spec.get("host_ip", "0.0.0.0"),
             protocol=port_spec.get("protocol", "tcp"),
-            mode=port_spec.get("mode", "ingress"),
+            mode=mode
         )
 
 
@@ -438,7 +451,7 @@ class HealthCheck:
 
         return HealthCheck(
             test=health_check_spec.get("test"),
-            retries=health_check_spec.get("retries", 0),
+            retries=health_check_spec.get("retries"),
             disable=health_check_spec.get("disable", False),
             interval=Duration.from_string(health_check_spec.get("interval", "0s")),
             timeout=Duration.from_string(health_check_spec.get("timeout", "0s")),
@@ -510,7 +523,7 @@ class EnvFile:
 
         return EnvFile(
             path=env_file_spec.get("path"),
-            required=env_file_spec.get("required", False),
+            required=env_file_spec.get("required"),
         )
 
 
@@ -552,8 +565,12 @@ class DevelopmentWatch:
             DevelopmentWatch: an object representing the DevelopmentWatch specification
         """
 
+        action=development_watch_spec.get("action"),
+        if action not in ('rebuild', 'sync', 'sync+restart'):
+            raise ValueError(f"Invalid action: {action}")
+
         return DevelopmentWatch(
-            action=development_watch_spec.get("action"),
+            action=action,
             path=development_watch_spec.get("path"),
             ignore=development_watch_spec.get("ignore", None),
             target=development_watch_spec.get("target", None),
@@ -639,13 +656,21 @@ class UpdateConfig:
             UpdateConfig: an object representing the UpdateConfig specification
         """
 
+        failure_action=update_config_spec.get("failure_action", "pause")
+        if failure_action not in ('pause', 'continue', 'rollback'):
+            raise ValueError(f"Invalid failure action: {failure_action}")
+
+        order=update_config_spec.get("order", "stop-first")
+        if order not in ('stop-first','start-first'):
+            raise ValueError(f"Invalid order: {order}")
+
         return UpdateConfig(
             parallelism=update_config_spec.get("parallelism"),
             delay=Duration.from_string(update_config_spec.get("delay", "0s")),
-            failure_action=update_config_spec.get("failure_action"),
+            failure_action=failure_action,
             monitor=Duration.from_string(update_config_spec.get("monitor", "0s")),
-            max_failure_ratio=update_config_spec.get("max_failure_ratio"),
-            order=update_config_spec.get("order"),
+            max_failure_ratio=update_config_spec.get("max_failure_ratio", 0.0),
+            order=order,
         )
 
 
@@ -696,13 +721,21 @@ class RollbackConfig:
             RollbackConfig: an object representing the RollbackConfig specification
         """
 
+        failure_action = rollback_config_spec.get("failure_action", "pause")
+        if failure_action not in ('pause', 'continue'):
+            raise ValueError(f"Invalid failure action: {failure_action}")
+        
+        order = rollback_config_spec.get("order", "stop-first")
+        if order not in ('stop-first','start-first'):
+            raise ValueError(f"Invalid order: {order}")
+
         return RollbackConfig(
             parallelism=rollback_config_spec.get("parallelism"),
             delay=Duration.from_string(rollback_config_spec.get("delay", "0s")),
-            failure_action=rollback_config_spec.get("failure_action"),
+            failure_action=failure_action,
             monitor=Duration.from_string(rollback_config_spec.get("monitor", "0s")),
-            max_failure_ratio=rollback_config_spec.get("max_failure_ratio"),
-            order=rollback_config_spec.get("order"),
+            max_failure_ratio=rollback_config_spec.get("max_failure_ratio", 0),
+            order=order,
         )
 
 
@@ -743,8 +776,12 @@ class RestartPolicy:
             RestartPolicy: an object representing the RestartPolicy specification
         """
 
+        condition=restart_policy_spec.get("condition")
+        if condition not in ('none', 'on-failure', 'any'):
+            raise ValueError(f"Invalid condition: {condition}")
+
         return RestartPolicy(
-            condition=restart_policy_spec.get("condition"),
+            condition=condition,
             max_attempts=restart_policy_spec.get("max_attempts"),
             delay=Duration.from_string(restart_policy_spec.get("delay", "0s")),
             window=Duration.from_string(restart_policy_spec.get("window", "0s")),
@@ -793,10 +830,15 @@ class Devices:
             Devices: an object representing the Devices specification
         """
 
+        count = devices_spec.get("count")
+
+        if not isinstance(count, int) and count != "all":
+            raise ValueError(f"Invalid count: {count}")
+
         return Devices(
             capabilities=devices_spec.get("capabilities"),
             driver=devices_spec.get("driver"),
-            count=devices_spec.get("count"),
+            count=count,
             device_ids=devices_spec.get("device_ids"),
             options=devices_spec.get("options"),
         )
@@ -840,9 +882,13 @@ class ResourceSpec:
             ResourceSpec: an object representing the ResourceSpec specification
         """
 
+        memory=resource_spec_spec.get("memory", None),
+        if memory is not None:
+            memory = ByteValue.from_string(memory)
+
         return ResourceSpec(
             cpus=resource_spec_spec.get("cpus"),
-            memory=ByteValue.from_string(resource_spec_spec.get("memory")),
+            memory=memory,
             pids=resource_spec_spec.get("pids"),
             devices=[Devices.parse(d) for d in resource_spec_spec.get("devices", [])],
         )
@@ -875,11 +921,18 @@ class Resources:
             Resources: an object representing the Resources specification
         """
 
-        return Resources(
-            limits=ResourceSpec.parse(resources_spec.get("limits")),
-            reservations=ResourceSpec.parse(resources_spec.get("reservations")),
-        )
+        limits = None
+        if "limits" in resources_spec:
+            limits = ResourceSpec.parse(resources_spec.get("limits"))
 
+        reservations = None
+        if "reservations" in resources_spec:
+            reservations = ResourceSpec.parse(resources_spec.get("reservations"))
+
+        return Resources(
+            limits=limits,
+            reservations=reservations,
+        )
 
 @dataclass
 class Placement:
@@ -970,17 +1023,39 @@ class Deployment(HasLabels):
         if endpoint_mode not in ["vip", "dnsrr"]:
             raise ValueError(f"Invalid endpoint_mode: {endpoint_mode}")
 
+        mode=deployment_spec.get("mode", "replicated")
+        if mode not in ["global", "replicated"]:
+            raise ValueError(f"Invalid mode: {mode}")
+
+        placement = None
+        if "placement" in deployment_spec:
+            placement = Placement.parse(deployment_spec.get("placement"))
+
+        resources = None
+        if "resources" in deployment_spec:
+            resources = Resources.parse(deployment_spec.get("resources"))
+
+        restart_policy = None
+        if "restart_policy" in deployment_spec:
+            restart_policy = RestartPolicy.parse(deployment_spec.get("restart_policy"))
+
+        rollback_config = None
+        if "rollback_config" in deployment_spec:
+            rollback_config = RollbackConfig.parse(deployment_spec.get("rollback_config"))
+
+        update_config = None
+        if "update_config" in deployment_spec:
+            update_config = UpdateConfig.parse(deployment_spec.get("update_config"))
+
         deployment = Deployment(
             endpoint_mode=endpoint_mode,
-            placement=Placement.parse(deployment_spec.get("placement")),
-            replicas=deployment_spec.get("replicas"),
-            resources=Resources.parse(deployment_spec.get("resources")),
-            restart_policy=RestartPolicy.parse(deployment_spec.get("restart_policy")),
-            rollback_config=RollbackConfig.parse(
-                deployment_spec.get("rollback_config")
-            ),
-            update_config=UpdateConfig.parse(deployment_spec.get("update_config")),
-            mode=deployment_spec.get("mode", "replicated"),
+            placement=placement,
+            replicas=deployment_spec.get("replicas", None),
+            resources=resources,
+            restart_policy=restart_policy,
+            rollback_config=rollback_config,
+            update_config=update_config,
+            mode=mode
         )
         deployment.labels = (deployment_spec.get("labels", {}),)
 
@@ -1021,10 +1096,18 @@ class DependencyConfig:
             DependencyConfig: an object representing the DependencyConfig specification
         """
 
+        condition = dependency_config_spec.get("condition")
+        if condition not in [
+            "service_started",
+            "service_healthy",
+            "service_completed_successfully",
+        ]:
+            raise ValueError(f"Invalid condition: {condition}")
+
         return DependencyConfig(
             restart=dependency_config_spec.get("restart"),
-            condition=dependency_config_spec.get("condition"),
-            required=dependency_config_spec.get("required"),
+            condition=condition,
+            required=dependency_config_spec.get("required", True),
         )
 
 
@@ -1144,10 +1227,9 @@ class BlockIOConfig:
                 BlockIOConfig.BPS: an object representing the BPS specification
             """
 
-            try:
-                rate = int(bps_spec.get("rate"))
-            except ValueError:
-                rate = ByteValue.from_string(bps_spec.get("rate"))
+            rate = bps_spec.get("rate")
+            if isinstance(rate, str):
+                rate = ByteValue.from_string(rate)
 
             return BlockIOConfig.BPS(path=bps_spec.get("path"), rate=rate)
 
@@ -1382,9 +1464,9 @@ class Secret:
 
         return Secret(
             source=secret_spec.get("source"),
-            target=secret_spec.get("target"),
-            uid=secret_spec.get("uid"),
-            gid=secret_spec.get("gid"),
+            target=secret_spec.get("target", None),
+            uid=secret_spec.get("uid", None),
+            gid=secret_spec.get("gid", None),
             mode=int(secret_spec.get("mode", 0o444)),
         )
 
@@ -1433,9 +1515,9 @@ class Config:
 
         return Config(
             source=config_spec.get("source"),
-            target=config_spec.get("target"),
-            uid=config_spec.get("uid"),
-            gid=config_spec.get("gid"),
+            target=config_spec.get("target", None),
+            uid=config_spec.get("uid", None),
+            gid=config_spec.get("gid", None),
             mode=int(config_spec.get("mode", 0o444)),
         )
 
@@ -1484,9 +1566,9 @@ class BuildSecretMap:
 
         return BuildSecretMap(
             source=build_secret_map_spec.get("source"),
-            target=build_secret_map_spec.get("target"),
-            uid=build_secret_map_spec.get("uid"),
-            gid=build_secret_map_spec.get("gid"),
+            target=build_secret_map_spec.get("target", None),
+            uid=build_secret_map_spec.get("uid", None),
+            gid=build_secret_map_spec.get("gid", None),
             mode=int(build_secret_map_spec.get("mode", 0o444)),
         )
 
@@ -1588,7 +1670,7 @@ class BuildSpec(HasLabels):
     Set the network containers connect to for the RUN instructions during build.
     """
 
-    shm_size: Optional[ByteValue | str]
+    shm_size: Optional[ByteValue | int]
     """
     Set the size of the /dev/shm partition for this build's containers.
     Specify as an int representing the number of bytes or as a string expressing a byte value.
@@ -1630,6 +1712,29 @@ class BuildSpec(HasLabels):
             BuildSpec: an object representing the BuildSpec specification
         """
 
+        shm_size = None
+        if "shm_size" in build_spec_spec:
+
+            shm_size = build_spec_spec["shm_size"]
+
+            if isinstance(build_spec_spec["shm_size"], str):
+                shm_size = ByteValue.from_string(shm_size)
+
+        secrets = None
+        if "secrets" in build_spec_spec:
+            secrets = build_spec_spec["secrets"]
+
+            if isinstance(secrets, dict):
+                secrets = BuildSecretMap.parse(secrets)
+
+        ulimits = None
+        if "ulimits" in build_spec_spec:
+
+            ulimits = build_spec_spec["ulimits"]  
+
+            if isinstance(ulimits, dict):
+                ulimits = ULimits.parse(build_spec_spec.get("ulimits"))
+
         return BuildSpec(
             context=build_spec_spec.get("context"),
             dockerfile=build_spec_spec.get("dockerfile"),
@@ -1645,12 +1750,12 @@ class BuildSpec(HasLabels):
             no_cache=build_spec_spec.get("no_cache"),
             pull=build_spec_spec.get("pull"),
             network=build_spec_spec.get("network"),
-            shm_size=build_spec_spec.get("shm_size"),
+            shm_size=shm_size,
             target=build_spec_spec.get("target"),
-            secrets=build_spec_spec.get("secrets"),
+            secrets=secrets,
             tags=build_spec_spec.get("tags"),
-            ulimits=build_spec_spec.get("ulimits"),
-            platforms=build_spec_spec.get("platforms"),
+            ulimits=ulimits,
+            platforms=build_spec_spec.get("platforms", None),
         )
 
 
@@ -2113,7 +2218,14 @@ class Service(HasLabels):
         image = service_spec.get("image", None)
         command = service_spec.get("command", None)
         entrypoint = service_spec.get("entrypoint", None)
-        env_file = service_spec.get("env_file", None)
+
+        env_file = None
+        if "env_file" in service_spec:
+            env_file = service_spec.get("env_file")
+
+            if isinstance(env_file, list):
+                env_file = [EnvFile.parse(env_file_spec) for env_file_spec in env_file]
+        
         environment = service_spec.get("environment", None)
         expose = service_spec.get("expose", None)
         links = service_spec.get("links", None)
@@ -2122,12 +2234,51 @@ class Service(HasLabels):
         depends_on = service_spec.get("depends_on", None)
         networks = service_spec.get("networks", None)
         secrets = service_spec.get("secrets", None)
-        build = service_spec.get("build", None)
-        logging = service_spec.get("logging", None)
-        healthcheck = service_spec.get("healthcheck", None)
-        depends_on = service_spec.get("depends_on", None)
-        deploy = service_spec.get("deploy", None)
-        mode = service_spec.get("mode", None)
+        
+        build = None
+        if "build" in service_spec:
+
+            build = service_spec.get("build")
+
+            if isinstance(build, dict):
+                build = BuildSpec.parse(build)
+
+        blkio_config = None
+        if "blkio_config" in service_spec:
+            blkio_config = service_spec.get("blkio_config")
+
+            if isinstance(blkio_config, dict):
+                blkio_config = BlockIOConfig.parse(blkio_config)
+
+        ulimits = None
+        if "ulimits" in service_spec:
+            ulimits = service_spec.get("ulimits")
+
+            if isinstance(ulimits, dict):
+                ulimits = ULimits.parse(ulimits)
+
+
+        logging = None
+        if "logging" in service_spec:
+            logging = service_spec.get("logging")
+
+            if isinstance(logging, dict):
+                logging = LoggingConfig.parse(logging)
+
+        healthcheck = None
+        if "healthcheck" in service_spec:
+            healthcheck = service_spec.get("healthcheck")
+
+            if isinstance(healthcheck, dict):
+                healthcheck = HealthCheck.parse(healthcheck)
+
+        deploy = None
+        if "deploy" in service_spec:
+            deploy = service_spec.get("deploy")
+
+            if isinstance(deploy, dict):
+                deploy = Deployment.parse(deploy)
+
         restart = service_spec.get("restart", None)
         stop_grace_period = service_spec.get("stop_grace_period", None)
         stop_signal = service_spec.get("stop_signal", None)
@@ -2136,7 +2287,12 @@ class Service(HasLabels):
         cap_add = service_spec.get("cap_add", None)
         cap_drop = service_spec.get("cap_drop", None)
 
+        uts = service_spec.get("uts", None)
+        if uts and uts not in ('host'):
+            raise ValueError(f"Unexpected UTS value: {uts}")
+
         service = Service(
+            blkio_config=blkio_config,
             image=image,
             command=command,
             entrypoint=entrypoint,
@@ -2184,10 +2340,10 @@ class Service(HasLabels):
             storage_opt=service_spec.get("storage_opt", None),
             sysctl=sysctls,
             tty=service_spec.get("tty", None),
-            ulimits=service_spec.get("ulimits", None),
+            ulimits=ulimits,
             user=service_spec.get("user", None),
             userns_mode=service_spec.get("userns_mode", None),
-            uts=service_spec.get("uts", None),
+            uts=uts,
         )
         # service.labels = service_spec.get("labels", None)
 

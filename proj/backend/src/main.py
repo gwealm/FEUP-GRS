@@ -7,4 +7,4 @@ manifest_template = handler.load(
     "/home/naapperas/workspace/uni/4-ano/grs/proj/backend/templates/docker-compose.yaml"
 )
 
-pprint.pprint(manifest_template.compile())
+pprint.pprint(manifest_template.compile({"EXAMPLE_DB": "example"}))

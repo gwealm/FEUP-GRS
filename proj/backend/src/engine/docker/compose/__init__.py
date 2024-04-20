@@ -1,7 +1,7 @@
 """_summary_
 """
 
-from .manifest import DockerComposeManifest
+from .manifest import Manifest
 
 
 class DockerCompose:
@@ -11,7 +11,7 @@ class DockerCompose:
         pass
 
     @staticmethod
-    def provision(manifest: DockerComposeManifest):
+    def provision(manifest: Manifest):
         """_summary_
 
         Args:
@@ -21,7 +21,7 @@ class DockerCompose:
         pass
 
     @staticmethod
-    def tear_down(manifest: DockerComposeManifest):
+    def tear_down(manifest: Manifest):
         """_summary_
 
         Args:

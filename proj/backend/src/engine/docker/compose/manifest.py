@@ -10,7 +10,7 @@ from .models.types import Value
 
 
 @dataclass
-class DockerComposeManifest:
+class Manifest:
     """
     Representation of a docker-compose.yaml manifest file.
     """
@@ -23,7 +23,7 @@ class DockerComposeManifest:
     configs: dict[str, Config] | list[str] = field(default_factory=dict)
 
 
-class DockerComposeManifestTemplate:
+class ManifestTemplate:
     """
     Representation of a docker-compose.yaml manifest file template.
 
@@ -35,14 +35,14 @@ class DockerComposeManifestTemplate:
 
     def compile(
         self, values: Optional[dict[str, Value]] = None
-    ) -> DockerComposeManifest:
+    ) -> Manifest:
         """_summary_
 
         Args:
             values (dict): _description_
 
         Returns:
-            DockerComposeManifest: _description_
+            Manifest: _description_
         """
         if values is None:
             values = {}
@@ -58,7 +58,7 @@ class DockerComposeManifestTemplate:
 
     def _parse_yaml_manifest_object(
         self, yaml_object: dict[str, Value]
-    ) -> DockerComposeManifest:
+    ) -> Manifest:
 
         services = []
         if "services" in yaml_object:
@@ -120,7 +120,7 @@ class DockerComposeManifestTemplate:
                 else:
                     networks.append(network_name)
 
-        return DockerComposeManifest(
+        return Manifest(
             services=services,
             networks=networks,
             volumes=volumes,

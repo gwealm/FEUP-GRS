@@ -1762,7 +1762,7 @@ class BuildSpec(HasLabels):
         )
 
 
-@dataclass(kw_only=True, slots=True, frozen=True)
+@dataclass(kw_only=True, slots=True)
 class Service(HasLabels):
     """
     Representation of a docker-compose.yaml service mapping block.
@@ -2347,6 +2347,6 @@ class Service(HasLabels):
             userns_mode=service_spec.get("userns_mode", None),
             uts=uts,
         )
-        # service.labels = service_spec.get("labels", None)
+        service.labels = service_spec.get("labels", None)
 
         return service

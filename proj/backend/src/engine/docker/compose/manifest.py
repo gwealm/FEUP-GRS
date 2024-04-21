@@ -16,11 +16,11 @@ class Manifest:
     """
 
     version: float = 3.8
-    services: dict[str, Service] | list[str] = field(default_factory=dict)
-    networks: dict[str, Network] | list[str] = field(default_factory=dict)
-    volumes: dict[str, Volume] | list[str] = field(default_factory=dict)
-    secrets: dict[str, Secret] | list[str] = field(default_factory=dict)
-    configs: dict[str, Config] | list[str] = field(default_factory=dict)
+    services: dict[str, Service] = field(default_factory=dict)
+    networks: dict[str, Network | str] = field(default_factory=dict)
+    volumes: dict[str, Volume | str] = field(default_factory=dict)
+    secrets: dict[str, Secret | str] = field(default_factory=dict)
+    configs: dict[str, Config | str] = field(default_factory=dict)
 
 
 class ManifestTemplate:
@@ -56,7 +56,7 @@ class ManifestTemplate:
 
     def _parse_yaml_manifest_object(self, yaml_object: dict[str, Value]) -> Manifest:
 
-        services = []
+        services = {}
         if "services" in yaml_object:
             service_specs = yaml_object.get("services")
 
@@ -64,11 +64,9 @@ class ManifestTemplate:
                 service_spec = service_specs.get(service_name, None)
 
                 if service_spec is not None:
-                    services.append(Service.parse(service_spec))
-                else:
-                    services.append(service_name)
+                    services[service_name] = Service.parse(service_spec)
 
-        volumes = []
+        volumes = {}
         if "volumes" in yaml_object:
             volume_specs = yaml_object.get("volumes")
 
@@ -76,11 +74,11 @@ class ManifestTemplate:
                 volume_spec = volume_specs.get(volume_name, None)
 
                 if volume_spec is not None:
-                    volumes.append(Volume.parse(volume_name, volume_spec))
+                    volumes[volume_name] = Volume.parse(volume_name, volume_spec)
                 else:
-                    volumes.append(volume_name)
+                    volumes[volume_name] = volume_name
 
-        configs = []
+        configs = {}
         if "configs" in yaml_object:
             config_specs = yaml_object.get("configs")
 
@@ -88,11 +86,11 @@ class ManifestTemplate:
                 config_spec = config_specs.get(config_name, None)
 
                 if config_spec is not None:
-                    configs.append(Config.parse(config_name, config_spec))
+                    configs[config_name] = Config.parse(config_name, config_spec)
                 else:
-                    configs.append(config_name)
+                    configs[config_name] = config_name
 
-        secrets = []
+        secrets = {}
         if "secrets" in yaml_object:
             secret_specs = yaml_object.get("secrets")
 
@@ -100,11 +98,11 @@ class ManifestTemplate:
                 secret_spec = secret_specs.get(secret_name, None)
 
                 if secret_spec is not None:
-                    secrets.append(Secret.parse(secret_name, secret_spec))
+                    secrets[secret_name] = Secret.parse(secret_name, secret_spec)
                 else:
-                    secrets.append(secret_name)
+                    secrets[secret_name] = secret_name
 
-        networks = []
+        networks = {}
         if "networks" in yaml_object:
             network_specs = yaml_object.get("networks")
 
@@ -112,9 +110,9 @@ class ManifestTemplate:
                 network_spec = network_specs.get(network_name, None)
 
                 if network_spec is not None:
-                    networks.append(Network.parse(network_name, network_spec))
+                    networks[network_name] = Network.parse(network_name, network_spec)
                 else:
-                    networks.append(network_name)
+                    networks[network_name] = network_name
 
         return Manifest(
             services=services,

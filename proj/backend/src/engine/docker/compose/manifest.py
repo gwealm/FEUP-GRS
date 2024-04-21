@@ -33,9 +33,7 @@ class ManifestTemplate:
     def __init__(self, manifest_str: str):
         self.manifest_str = manifest_str
 
-    def compile(
-        self, values: Optional[dict[str, Value]] = None
-    ) -> Manifest:
+    def compile(self, values: Optional[dict[str, Value]] = None) -> Manifest:
         """_summary_
 
         Args:
@@ -56,9 +54,7 @@ class ManifestTemplate:
 
         return self._parse_yaml_manifest_object(yaml_object)
 
-    def _parse_yaml_manifest_object(
-        self, yaml_object: dict[str, Value]
-    ) -> Manifest:
+    def _parse_yaml_manifest_object(self, yaml_object: dict[str, Value]) -> Manifest:
 
         services = []
         if "services" in yaml_object:

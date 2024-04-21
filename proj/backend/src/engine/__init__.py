@@ -4,10 +4,11 @@ Code related to a deployment engine for network configurations made in the appli
 
 from abc import ABC
 
+
 class Engine(ABC):
     """
     An engine is an object that can receive a deployment configuration and deploys it
-    
+
     This class is abstract and should not be used. Instead use the specific deployment engines provided.
     """
 

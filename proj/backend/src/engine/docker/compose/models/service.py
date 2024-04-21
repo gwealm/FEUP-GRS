@@ -42,7 +42,7 @@ class BindProperties:
         """
 
         selinux = bind_properties_spec.get("selinux")
-        if selinux not in ('z', 'Z'):
+        if selinux not in ("z", "Z"):
             raise ValueError(f"Unexpected value for selinux: {selinux}")
 
         return BindProperties(
@@ -179,7 +179,7 @@ class Volume:
             Volume: _description_
         """
 
-        volume_type=volume_spec.get("type")
+        volume_type = volume_spec.get("type")
         if volume_type not in ("volume", "bind", "tmpfs", "npipe", "cluster"):
             raise ValueError(f"Unexpected value for type: {type}")
 
@@ -293,7 +293,7 @@ class PortSpec:
             app_protocol=port_spec.get("app_protocol"),
             host_ip=port_spec.get("host_ip", "0.0.0.0"),
             protocol=port_spec.get("protocol", "tcp"),
-            mode=mode
+            mode=mode,
         )
 
 
@@ -565,8 +565,8 @@ class DevelopmentWatch:
             DevelopmentWatch: an object representing the DevelopmentWatch specification
         """
 
-        action=development_watch_spec.get("action"),
-        if action not in ('rebuild', 'sync', 'sync+restart'):
+        action = (development_watch_spec.get("action"),)
+        if action not in ("rebuild", "sync", "sync+restart"):
             raise ValueError(f"Invalid action: {action}")
 
         return DevelopmentWatch(
@@ -656,12 +656,12 @@ class UpdateConfig:
             UpdateConfig: an object representing the UpdateConfig specification
         """
 
-        failure_action=update_config_spec.get("failure_action", "pause")
-        if failure_action not in ('pause', 'continue', 'rollback'):
+        failure_action = update_config_spec.get("failure_action", "pause")
+        if failure_action not in ("pause", "continue", "rollback"):
             raise ValueError(f"Invalid failure action: {failure_action}")
 
-        order=update_config_spec.get("order", "stop-first")
-        if order not in ('stop-first','start-first'):
+        order = update_config_spec.get("order", "stop-first")
+        if order not in ("stop-first", "start-first"):
             raise ValueError(f"Invalid order: {order}")
 
         return UpdateConfig(
@@ -722,11 +722,11 @@ class RollbackConfig:
         """
 
         failure_action = rollback_config_spec.get("failure_action", "pause")
-        if failure_action not in ('pause', 'continue'):
+        if failure_action not in ("pause", "continue"):
             raise ValueError(f"Invalid failure action: {failure_action}")
-        
+
         order = rollback_config_spec.get("order", "stop-first")
-        if order not in ('stop-first','start-first'):
+        if order not in ("stop-first", "start-first"):
             raise ValueError(f"Invalid order: {order}")
 
         return RollbackConfig(
@@ -776,8 +776,8 @@ class RestartPolicy:
             RestartPolicy: an object representing the RestartPolicy specification
         """
 
-        condition=restart_policy_spec.get("condition")
-        if condition not in ('none', 'on-failure', 'any'):
+        condition = restart_policy_spec.get("condition")
+        if condition not in ("none", "on-failure", "any"):
             raise ValueError(f"Invalid condition: {condition}")
 
         return RestartPolicy(
@@ -882,7 +882,7 @@ class ResourceSpec:
             ResourceSpec: an object representing the ResourceSpec specification
         """
 
-        memory=resource_spec_spec.get("memory", None),
+        memory = (resource_spec_spec.get("memory", None),)
         if memory is not None:
             memory = ByteValue.from_string(memory)
 
@@ -933,6 +933,7 @@ class Resources:
             limits=limits,
             reservations=reservations,
         )
+
 
 @dataclass
 class Placement:
@@ -1023,7 +1024,7 @@ class Deployment(HasLabels):
         if endpoint_mode not in ["vip", "dnsrr"]:
             raise ValueError(f"Invalid endpoint_mode: {endpoint_mode}")
 
-        mode=deployment_spec.get("mode", "replicated")
+        mode = deployment_spec.get("mode", "replicated")
         if mode not in ["global", "replicated"]:
             raise ValueError(f"Invalid mode: {mode}")
 
@@ -1041,7 +1042,9 @@ class Deployment(HasLabels):
 
         rollback_config = None
         if "rollback_config" in deployment_spec:
-            rollback_config = RollbackConfig.parse(deployment_spec.get("rollback_config"))
+            rollback_config = RollbackConfig.parse(
+                deployment_spec.get("rollback_config")
+            )
 
         update_config = None
         if "update_config" in deployment_spec:
@@ -1055,7 +1058,7 @@ class Deployment(HasLabels):
             restart_policy=restart_policy,
             rollback_config=rollback_config,
             update_config=update_config,
-            mode=mode
+            mode=mode,
         )
         deployment.labels = (deployment_spec.get("labels", {}),)
 
@@ -1730,7 +1733,7 @@ class BuildSpec(HasLabels):
         ulimits = None
         if "ulimits" in build_spec_spec:
 
-            ulimits = build_spec_spec["ulimits"]  
+            ulimits = build_spec_spec["ulimits"]
 
             if isinstance(ulimits, dict):
                 ulimits = ULimits.parse(build_spec_spec.get("ulimits"))
@@ -2225,7 +2228,7 @@ class Service(HasLabels):
 
             if isinstance(env_file, list):
                 env_file = [EnvFile.parse(env_file_spec) for env_file_spec in env_file]
-        
+
         environment = service_spec.get("environment", None)
         expose = service_spec.get("expose", None)
         links = service_spec.get("links", None)
@@ -2234,7 +2237,7 @@ class Service(HasLabels):
         depends_on = service_spec.get("depends_on", None)
         networks = service_spec.get("networks", None)
         secrets = service_spec.get("secrets", None)
-        
+
         build = None
         if "build" in service_spec:
 
@@ -2256,7 +2259,6 @@ class Service(HasLabels):
 
             if isinstance(ulimits, dict):
                 ulimits = ULimits.parse(ulimits)
-
 
         logging = None
         if "logging" in service_spec:
@@ -2288,7 +2290,7 @@ class Service(HasLabels):
         cap_drop = service_spec.get("cap_drop", None)
 
         uts = service_spec.get("uts", None)
-        if uts and uts not in ('host'):
+        if uts and uts not in ("host"):
             raise ValueError(f"Unexpected UTS value: {uts}")
 
         service = Service(

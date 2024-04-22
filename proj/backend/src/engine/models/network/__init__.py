@@ -5,6 +5,7 @@ from typing import TypeVar
 
 from ...converter import Converter
 from .address import IPAddress, CIDR
+from ..host import Host
 
 
 class Network:
@@ -15,6 +16,7 @@ class Network:
 
         self.name = name
         self.cidr = cidr
+        self.hosts: dict[IPAddress, Host] = {}
         self._next_host = self.cidr.base_address + 1
 
     def next_host_address(self) -> IPAddress:
@@ -28,6 +30,12 @@ class Network:
         self._next_host = next_host + 1
 
         return next_host
+
+    def add_host(self, host: Host, address: IPAddress):
+        """
+        """
+
+        self.hosts[address] = host
 
 T = TypeVar("T")
 

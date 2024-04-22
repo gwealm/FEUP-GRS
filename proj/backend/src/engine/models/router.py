@@ -8,10 +8,13 @@ from ..converter import Converter
 
 from .host import Host
 
+
 class Router(Host):
     """"""
 
+
 T = TypeVar("T")
+
 
 class RouterConverter(Converter[T, Router]):
     """

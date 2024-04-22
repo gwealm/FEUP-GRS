@@ -8,6 +8,8 @@ from typing import Optional
 from .traits import HasLabels, CanBeExternal
 from .types import Value
 
+from ....models.network import NetworkConverter, Network as AppNetwork
+
 
 @dataclass
 class DriverOptions(dict[str, Value]):
@@ -168,3 +170,20 @@ class Network(HasLabels, CanBeExternal):
             driver_opts=driver_opts,
             ipam=ipam,
         )
+
+
+class DockerNetworkConverter(NetworkConverter[Network]):
+    """
+    Allows converting from a Network-like, engine-specific class to the Network class,
+    which can be interpreted by the application
+    """
+
+    def convert_to(self, model: Network) -> AppNetwork:
+        """
+        Allows converting from type T to type F
+        """
+
+    def convert_from(self, model: AppNetwork) -> Network:
+        """
+        Allows converting from type F to type T
+        """

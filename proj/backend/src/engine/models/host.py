@@ -7,11 +7,11 @@ from ..converter import Converter
 
 
 class Host:
-    """
-    """
+    """ """
 
 
 T = TypeVar("T")
+
 
 class HostConverter(Converter[T, Host]):
     """

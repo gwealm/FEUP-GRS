@@ -6,6 +6,7 @@ from abc import ABC
 
 from engine.models.host import Host
 
+
 class Service(ABC):
     """Service is a generic service that can be deployed to any network"""
 

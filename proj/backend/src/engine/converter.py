@@ -9,6 +9,7 @@ from typing import TypeVar, Generic
 T = TypeVar("T")
 F = TypeVar("F")
 
+
 class Converter(Generic[T, F], ABC):
     """
     Abstract class that allows converting from one type to another.

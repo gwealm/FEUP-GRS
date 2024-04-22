@@ -3,8 +3,9 @@ Code related to a deployment engine for network configurations made in the appli
 """
 
 from abc import ABC, abstractmethod
-from typing import Any
 from .converter import Converter
+
+from .models import Deployment
 
 
 class Engine(ABC):
@@ -19,7 +20,7 @@ class Engine(ABC):
         self.converters: dict[type[Converter], type[Converter]] = {}
 
     @abstractmethod
-    def deploy(self, config: Any) -> None:
+    def deploy(self, config: Deployment) -> None:
         """
         Deploys the specified deployment configuration.
         """

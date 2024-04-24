@@ -1,9 +1,21 @@
-from engine.docker.compose.loader import DockerComposeManifestHandler
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
-import pprint
+from .api.routers import organization, team
 
-handler = DockerComposeManifestHandler()
+app = FastAPI()
 
-manifest_template = handler.load("../templates/docker-compose.yaml")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins = ['*'],
+    allow_credentials = True,
+    allow_methods = ["*"],
+    allow_headers = ["*"]
+)
 
-pprint.pprint(manifest_template.compile({"EXAMPLE_DB": "example"}))
+app.include_router(organization.router)
+app.include_router(team.router)
+
+@app.get("/")
+async def root():
+    return {"message": "Hello GRS!"}

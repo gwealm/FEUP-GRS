@@ -24,3 +24,9 @@ class Engine(ABC):
         """
         Deploys the specified deployment configuration.
         """
+
+    @abstractmethod
+    def is_available(self) -> bool:
+        """
+        
+        """

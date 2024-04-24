@@ -10,22 +10,24 @@ class DockerCompose:
     def __init__(self):
         pass
 
-    @staticmethod
-    def provision(manifest: Manifest):
+    def provision(self, manifest: Manifest):
         """_summary_
 
         Args:
             manifest (DockerComposeManifest): _description_
         """
 
-        pass
-
-    @staticmethod
-    def tear_down(manifest: Manifest):
+    def tear_down(self, manifest: Manifest):
         """_summary_
 
         Args:
             manifest (DockerComposeManifest): _description_
         """
 
-        pass
+    def is_available(self) -> bool:
+        """_summary_
+
+        Returns:
+            bool: _description_
+        """
+        return True

@@ -29,3 +29,6 @@ class Docker(Engine):
         manifest = None
 
         self.compose.provision(manifest)
+    
+    def is_available(self) -> bool:
+        return self.compose.is_available()

@@ -2206,15 +2206,16 @@ class Service(HasLabels):
 
     @staticmethod
     def parse(service_spec: dict[str, Value]):
-        """
-        Parses a service specification and returns a Service object.
+        """Parses a service specification and returns a Service object.
 
-        :param service_name: The name of the service.
-        :type service_name: str
-        :param service_spec: The service specification.
-        :type service_spec: dict[str, Value]
-        :return: A Service object.
-        :rtype: Service
+        Args:
+            service_spec (dict[str, Value]): a specification of the service
+
+        Raises:
+            ValueError: If some of the values fall out of their domain range
+
+        Returns:
+            Service: a Service object holding the parsed data
         """
 
         working_dir = service_spec.get("working_dir", None)

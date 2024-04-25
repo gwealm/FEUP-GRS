@@ -272,7 +272,7 @@ class PortSpec:
     """
 
     @staticmethod
-    def parse(port_name: str, port_spec: dict[str, Value]) -> "PortSpec":
+    def parse(port_spec: dict[str, Value]) -> "PortSpec":
         """Parses a dictionary representing a port specification into a PortSpec object.
 
         Args:
@@ -287,7 +287,7 @@ class PortSpec:
             raise ValueError(f"Unexpected value for mode: {mode}")
 
         return PortSpec(
-            name=port_spec.get("name", port_name),
+            name=port_spec.get("name"),
             target=port_spec.get("target"),
             published=port_spec.get("published"),
             app_protocol=port_spec.get("app_protocol"),
@@ -1779,7 +1779,7 @@ class Service(HasLabels):
     until you explicitly request it to.
     """
 
-    build: str | BuildSpec
+    build: Optional[str | BuildSpec] = None
     """
     Build context configuration for this service.
     """
@@ -1832,7 +1832,7 @@ class Service(HasLabels):
     """
     Define the number of (potentially virtual) CPUs to allocate to service containers. 
     
-    his is a fractional number. 0.000 means no limit.
+    This is a fractional number. 0.000 means no limit.
     """
 
     cpuset: Optional[str] = None
@@ -1868,7 +1868,7 @@ class Service(HasLabels):
     Overrides the default command declared by the container image.
     """
 
-    configs: Optional[list[str] | list[Config]] = None
+    configs: Optional[list[str | Config]] = None
     """
     Specifies configuration values accessible to this container.
     """
@@ -1935,7 +1935,7 @@ class Service(HasLabels):
     Declares the default entrypoint for the service container.
     """
 
-    env_file: Optional[str | list[str] | list[EnvFile]] = None
+    env_file: Optional[str | list[str | EnvFile]] = None
     """
     Adds environment variables to the container based on the file content.
     """
@@ -2075,7 +2075,7 @@ class Service(HasLabels):
     Defines the target platform the containers for the service run on.
     """
 
-    ports: Optional[list[str] | list[PortSpec]] = None
+    ports: Optional[list[str | PortSpec]] = None
     """
     Exposes container ports.
     """
@@ -2149,7 +2149,7 @@ class Service(HasLabels):
     Defines the signal that Compose uses to stop the service containers
     """
 
-    storage_opt: dict[str, Value] = None
+    storage_opt: Optional[dict[str, Value]] = None
     """
     Defines storage driver options for a service.
     """
@@ -2218,26 +2218,8 @@ class Service(HasLabels):
             Service: a Service object holding the parsed data
         """
 
-        working_dir = service_spec.get("working_dir", None)
-        image = service_spec.get("image", None)
-        command = service_spec.get("command", None)
-        entrypoint = service_spec.get("entrypoint", None)
-
-        env_file = None
-        if "env_file" in service_spec:
-            env_file = service_spec.get("env_file")
-
-            if isinstance(env_file, list):
-                env_file = [EnvFile.parse(env_file_spec) for env_file_spec in env_file]
-
-        environment = service_spec.get("environment", None)
-        expose = service_spec.get("expose", None)
-        links = service_spec.get("links", None)
-        volumes = service_spec.get("volumes", None)
-        volumes_from = service_spec.get("volumes_from", None)
-        depends_on = service_spec.get("depends_on", None)
-        networks = service_spec.get("networks", None)
-        secrets = service_spec.get("secrets", None)
+        annotations = service_spec.get("annotations", None)
+        attach = service_spec.get("attach", None)
 
         build = None
         if "build" in service_spec:
@@ -2254,19 +2236,124 @@ class Service(HasLabels):
             if isinstance(blkio_config, dict):
                 blkio_config = BlockIOConfig.parse(blkio_config)
 
-        ulimits = None
-        if "ulimits" in service_spec:
-            ulimits = service_spec.get("ulimits")
+        cpu_count = service_spec.get("cpu_count", None)
+        cpu_percent = service_spec.get("cpu_percent", None)
+        cpu_shares = service_spec.get("cpu_shares", None)
+        cpu_period = service_spec.get("cpu_period", None)
+        cpu_quota = service_spec.get("cpu_quota", None)
 
-            if isinstance(ulimits, dict):
-                ulimits = ULimits.parse(ulimits)
+        cpu_rt_runtime = service_spec.get("cpu_rt_runtime", None)
+        if cpu_rt_runtime is not None:
+            cpu_rt_runtime = Duration.from_string(cpu_rt_runtime)
 
-        logging = None
-        if "logging" in service_spec:
-            logging = service_spec.get("logging")
+        cpu_rt_period = service_spec.get("cpu_rt_period", None)
+        if cpu_rt_period is not None:
+            cpu_rt_period = Duration.from_string(cpu_rt_period)
 
-            if isinstance(logging, dict):
-                logging = LoggingConfig.parse(logging)
+        cpus = service_spec.get("cpus", None)
+        cpuset = service_spec.get("cpuset", None)
+
+        cap_add = service_spec.get("cap_add", None)
+        cap_drop = service_spec.get("cap_drop", None)
+
+        cgroup = service_spec.get("cgroup", None)
+        cgroup_parent = service_spec.get("cgroup_parent", None)
+
+        command = service_spec.get("command", None)
+
+        configs = None
+        if "configs" in service_spec:
+            configs = service_spec.get("configs")
+
+            configs = [
+                (
+                    Config.parse(config_spec)
+                    if isinstance(config_spec, dict)
+                    else config_spec
+                )
+                for config_spec in configs
+            ]
+
+        container_name = service_spec.get("container_name", None)
+
+        credential_spec = None
+        if "credential_spec" in service_spec:
+
+            credential_spec = service_spec.get("credential_spec")
+
+            match credential_spec:
+                case {"registry": _}:
+                    credential_spec = CredentialSpecRegistry.parse(credential_spec)
+                case {"config": _}:
+                    credential_spec = CredentialSpecConfig.parse(credential_spec)
+                case {"file": _}:
+                    credential_spec = CredentialSpecFile.parse(credential_spec)
+                case _:
+                    raise ValueError(
+                        "Invalid credential specification", credential_spec
+                    )
+
+        depends_on = None
+        if "depends_on" in service_spec:
+            depends_on = service_spec.get("depends_on")
+
+            if isinstance(depends_on, dict):
+                depends_on = {
+                    service_name: DependencyConfig.parse(dependency_spec)
+                    for service_name, dependency_spec in depends_on.items()
+                }
+
+        deploy = None
+        if "deploy" in service_spec:
+            deploy = Deployment.parse(service_spec.get("deploy"))
+
+        develop = None
+        if "develop" in service_spec:
+            develop = Development.parse(service_spec.get("develop"))
+
+        device_cgroup_rules = service_spec.get("device_cgroup_rules", None)
+
+        devices = service_spec.get("devices", None)
+
+        dns = service_spec.get("dns", None)
+        dns_opt = service_spec.get("dns_opt", None)
+        dns_search = service_spec.get("dns_search", None)
+
+        domainname = service_spec.get("domainname", None)
+
+        entrypoint = service_spec.get("entrypoint", None)
+
+        env_file = None
+        if "env_file" in service_spec:
+            env_file = service_spec.get("env_file")
+
+            env_file = [
+                (
+                    EnvFile.parse(env_file_spec)
+                    if isinstance(env_file_spec, dict)
+                    else env_file_spec
+                )
+                for env_file_spec in env_file
+            ]
+
+            if isinstance(env_file, list):
+                env_file = [EnvFile.parse(env_file_spec) for env_file_spec in env_file]
+
+        environment = service_spec.get("environment", None)
+
+        expose = service_spec.get("expose", None)
+
+        extends = None
+        if "extends" in service_spec:
+            extends = service_spec.get("extends")
+
+            extends = [
+                ExtensionsSpec.parse(extension_spec) for extension_spec in extends
+            ]
+
+        external_links = service_spec.get("external_links", None)
+        extra_hosts = service_spec.get("extra_hosts", None)
+        group_add = service_spec.get("group_add", None)
 
         healthcheck = None
         if "healthcheck" in service_spec:
@@ -2275,78 +2362,252 @@ class Service(HasLabels):
             if isinstance(healthcheck, dict):
                 healthcheck = HealthCheck.parse(healthcheck)
 
-        deploy = None
-        if "deploy" in service_spec:
-            deploy = service_spec.get("deploy")
+        hostname = service_spec.get("hostname", None)
+        image = service_spec.get("image", None)
 
-            if isinstance(deploy, dict):
-                deploy = Deployment.parse(deploy)
+        init = service_spec.get("init", None)
 
-        restart = service_spec.get("restart", None)
-        stop_grace_period = service_spec.get("stop_grace_period", None)
+        ipc = None
+        if "ipc" in service_spec:
+            ipc = service_spec.get("ipc", None)
+
+            if isinstance(ipc, str):
+                if ipc != "shareable":
+                    ipc = IPCService(ipc)
+
+        isolation = service_spec.get("isolation", None)
+        links = service_spec.get("links", None)
+
+        logging = None
+        if "logging" in service_spec:
+            logging = service_spec.get("logging")
+
+            if isinstance(logging, dict):
+                logging = LoggingConfig.parse(logging)
+
+        mac_address = service_spec.get("mac_address", None)
+
+        mem_limit = None
+        if "mem_limit" in service_spec:
+            mem_limit = ByteValue.from_string(service_spec.get("mem_limit"))
+
+        mem_reservation = None
+        if "mem_reservation" in service_spec:
+            mem_reservation = ByteValue.from_string(service_spec.get("mem_reservation"))
+        mem_swappiness = service_spec.get("mem_swappiness", None)
+
+        memswap_limit = None
+        if "memswap_limit" in service_spec:
+            memswap_limit = ByteValue.from_string(service_spec.get("memswap_limit"))
+
+        network_mode = None
+        if "network_mode" in service_spec:
+            network_mode = service_spec.get("network_mode")
+
+            if network_mode not in ("none", "host"):
+                network_mode = NetworkMode(network_mode)
+
+        networks = None
+        if "networks" in service_spec:
+            networks = service_spec.get("networks")
+
+            if isinstance(networks, dict):
+                networks = {
+                    network_name: NetworkSpec.parse(network_spec)
+                    for network_name, network_spec in networks.items()
+                }
+
+        oom_kill_disable = service_spec.get("oom_kill_disable", None)
+        oom_score_adj = service_spec.get("oom_score_adj", None)
+        pid = service_spec.get("pid", None)
+        pids_limit = service_spec.get("pids_limit", None)
+        platform = service_spec.get("platform", None)
+
+        ports = None
+        if "ports" in service_spec:
+            ports = service_spec.get("ports")
+
+            ports = [
+                PortSpec.parse(port_spec) if isinstance(port_spec, dict) else port_spec
+                for port_spec in ports
+            ]
+
+        privileged = service_spec.get("privileged", None)
+        profiles = service_spec.get("profiles", None)
+
+        pull_policy = None
+        if "pull_policy" in service_spec:
+            pull_policy = service_spec.get("pull_policy")
+
+            if pull_policy not in (
+                "always",
+                "never",
+                "missing",
+                "build",
+                "if_not_present",
+            ):
+                raise ValueError(f"Invalid value for pull policy: {pull_policy}")
+
+        read_only = service_spec.get("read_only", None)
+
+        restart = None
+        if "restart" in service_spec:
+            _restart = service_spec.get("restart", None)
+
+            match _restart:
+                case "no" | "always" | "unless-stopped":
+                    restart = _restart
+                case str():
+                    import re
+
+                    pattern = re.compile(r"on-failure(:\d+)?")
+
+                    if (m := pattern.match(_restart)) is not None:
+                        max_retries = int(m.group())
+
+                        restart = FailureRestartPolicy(max_retries)
+                case _:
+                    raise ValueError(f"Invalid value for restart: {_restart}")
+
+        runtime = service_spec.get("runtime", None)
+        if runtime and runtime not in ("runc",):
+            raise ValueError(f"Invalid value for runtime: {runtime}")
+
+        scale = service_spec.get("scale", None)
+
+        secrets = None
+        if "secrets" in service_spec:
+            secrets = service_spec.get("secrets")
+
+            if isinstance(secrets, dict):
+                secrets = {
+                    secret_name: Secret.parse(secret_spec)
+                    for secret_name, secret_spec in secrets.items()
+                }
+
+        security_opt = service_spec.get("security_opt", None)
+        shm_size = None
+        if "shm_size" in service_spec:
+            shm_size = ByteValue.from_string(service_spec.get("shm_size"))
+
+        stdin_open = service_spec.get("stdin_open")
+
+        stop_grace_period = None
+        if "stop_grace_period" in service_spec:
+            stop_grace_period = Duration.from_string(
+                service_spec.get("stop_grace_period")
+            )
+
         stop_signal = service_spec.get("stop_signal", None)
-        sysctls = service_spec.get("sysctls", None)
+        storage_opt = service_spec.get("storage_opt", None)
+        sysctl = service_spec.get("sysctl", None)
         tmpfs = service_spec.get("tmpfs", None)
-        cap_add = service_spec.get("cap_add", None)
-        cap_drop = service_spec.get("cap_drop", None)
+        tty = service_spec.get("tty", None)
 
+        ulimits = None
+        if "ulimits" in service_spec:
+            ulimits = service_spec.get("ulimits")
+
+            if isinstance(ulimits, dict):
+                ulimits = ULimits.parse(ulimits)
+
+        userns_mode = service_spec.get("userns_mode", None)
         uts = service_spec.get("uts", None)
-        if uts and uts not in ("host"):
+        if uts and uts not in ("host",):
             raise ValueError(f"Unexpected UTS value: {uts}")
 
+        volumes = None
+        if "volumes" in service_spec:
+            volumes = service_spec.get("volumes")
+
+            volumes = [Volume.parse(volume_spec) if isinstance(volume_spec, dict) else volume_spec for volume_spec in volumes]
+
+        volumes_from = service_spec.get("volumes_from", None)
+
+        working_dir = service_spec.get("working_dir", None)
+
         service = Service(
+            annotations=annotations,
+            attach=attach,
+            build=build,
             blkio_config=blkio_config,
-            image=image,
+            cpu_count=cpu_count,
+            cpu_percent=cpu_percent,
+            cpu_shares=cpu_shares,
+            cpu_period=cpu_period,
+            cpu_quota=cpu_quota,
+            cpu_rt_runtime=cpu_rt_runtime,
+            cpu_rt_period=cpu_rt_period,
+            cpus=cpus,
+            cpuset=cpuset,
+            cap_add=cap_add,
+            cap_drop=cap_drop,
+            cgroup=cgroup,
+            cgroup_parent=cgroup_parent,
             command=command,
+            container_name=container_name,
+            credential_spec=credential_spec,
+            depends_on=depends_on,
+            deploy=deploy,
+            develop=develop,
+            device_cgroup_rules=device_cgroup_rules,
+            devices=devices,
+            dns=dns,
+            dns_opt=dns_opt,
+            dns_search=dns_search,
+            domainname=domainname,
             entrypoint=entrypoint,
             env_file=env_file,
             environment=environment,
             expose=expose,
-            links=links,
-            volumes=volumes,
-            volumes_from=volumes_from,
-            depends_on=depends_on,
-            networks=networks,
-            secrets=secrets,
-            build=build,
-            logging=logging,
+            extends=extends,
+            external_links=external_links,
+            extra_hosts=extra_hosts,
+            group_add=group_add,
             healthcheck=healthcheck,
-            deploy=deploy,
+            hostname=hostname,
+            image=image,
+            init=init,
+            ipc=ipc,
+            isolation=isolation,
+            links=links,
+            logging=logging,
+            mac_address=mac_address,
+            mem_limit=mem_limit,
+            mem_reservation=mem_reservation,
+            mem_swappiness=mem_swappiness,
+            memswap_limit=memswap_limit,
+            network_mode=network_mode,
+            networks=networks,
+            oom_kill_disable=oom_kill_disable,
+            oom_score_adj=oom_score_adj,
+            pid=pid,
+            pids_limit=pids_limit,
+            platform=platform,
+            ports=ports,
+            privileged=privileged,
+            profiles=profiles,
+            pull_policy=pull_policy,
+            read_only=read_only,
             restart=restart,
+            runtime=runtime,
+            scale=scale,
+            secrets=secrets,
+            security_opt=security_opt,
+            shm_size=shm_size,
+            stdin_open=stdin_open,
             stop_grace_period=stop_grace_period,
             stop_signal=stop_signal,
+            storage_opt=storage_opt,
+            sysctl=sysctl,
             tmpfs=tmpfs,
-            cap_add=cap_add,
-            cap_drop=cap_drop,
-            working_dir=working_dir,
-            mac_address=service_spec.get("mac_address", None),
-            mem_limit=service_spec.get("mem_limit", None),
-            mem_reservation=service_spec.get("mem_reservation", None),
-            mem_swappiness=service_spec.get("mem_swappiness", None),
-            memswap_limit=service_spec.get("memswap_limit", None),
-            network_mode=service_spec.get("network_mode", None),
-            oom_kill_disable=service_spec.get("oom_kill_disable", None),
-            oom_score_adj=service_spec.get("oom_score_adj", None),
-            pid=service_spec.get("pid", None),
-            pids_limit=service_spec.get("pids_limit", None),
-            platform=service_spec.get("platform", None),
-            ports=service_spec.get("ports", None),
-            privileged=service_spec.get("privileged", None),
-            profiles=service_spec.get("profiles", None),
-            pull_policy=service_spec.get("pull_policy", None),
-            read_only=service_spec.get("read_only", None),
-            runtime=service_spec.get("runtime", None),
-            scale=service_spec.get("scale", None),
-            security_opt=service_spec.get("security_opt", None),
-            shm_size=service_spec.get("shm_size", None),
-            stdin_open=service_spec.get("stdin_open", None),
-            storage_opt=service_spec.get("storage_opt", None),
-            sysctl=sysctls,
-            tty=service_spec.get("tty", None),
+            tty=tty,
             ulimits=ulimits,
-            user=service_spec.get("user", None),
-            userns_mode=service_spec.get("userns_mode", None),
+            userns_mode=userns_mode,
             uts=uts,
+            volumes=volumes,
+            volumes_from=volumes_from,
+            working_dir=working_dir,
         )
         service.labels = service_spec.get("labels", None)
 

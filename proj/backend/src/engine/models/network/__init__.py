@@ -32,10 +32,10 @@ class Network:
         return next_host
 
     def add_host(self, host: Host, address: IPAddress):
-        """
-        """
+        """ """
 
         self.hosts[address] = host
+
 
 T = TypeVar("T")
 

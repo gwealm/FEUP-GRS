@@ -1,6 +1,9 @@
 """_summary_
 """
 
+import subprocess
+import shlex
+
 from .manifest import Manifest
 
 
@@ -25,9 +28,14 @@ class DockerCompose:
         """
 
     def is_available(self) -> bool:
-        """_summary_
+        """Returns whether Docker compose is available on this system.
 
         Returns:
-            bool: _description_
+            bool: Whether Docker Compose is available on this system or not
         """
-        return True
+
+        try:
+            subprocess.run(shlex.split("docker compose version"), check=True)
+            return True
+        except subprocess.CalledProcessError:
+            return False

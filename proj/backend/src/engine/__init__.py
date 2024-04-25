@@ -12,7 +12,8 @@ class Engine(ABC):
     """
     An engine is an object that can receive a deployment configuration and deploys it
 
-    This class is abstract and should not be used. Instead use the specific deployment engines provided.
+    This class is abstract and should not be used.
+    Instead use the specific deployment engines provided.
     """
 
     def __init__(self, name: str):
@@ -28,5 +29,5 @@ class Engine(ABC):
     @abstractmethod
     def is_available(self) -> bool:
         """
-        
+        Returns whether the specified deployment engine is available on this system or not.
         """

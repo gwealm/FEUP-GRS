@@ -7,7 +7,7 @@ services:
       target: development
     command: npm run start-watch
     environment:
-      - DATABASE_DB={{ EXAMPLE_DB }}
+      - DATABASE_DB=example
       - DATABASE_USER=root
       - DATABASE_PASSWORD=/run/secrets/db-password
       - DATABASE_HOST=db
@@ -19,9 +19,6 @@ services:
     secrets:
       - db-password
     volumes:
-      - ./backend/src:/code/src:ro
-      - ./backend/package.json:/code/package.json
-      - ./backend/package-lock.json:/code/package-lock.json
       - back-notused:/opt/app/node_modules
     networks:
       - public

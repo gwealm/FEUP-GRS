@@ -44,7 +44,8 @@ class GenerateConfig(ABC):
     """
 
     def _filter_attr(self, attr):
-        return not attr.startswith("_") and attr not in ('parse', 'to_dict')
+        return not attr.startswith("_") and attr not in ("parse", "to_dict")
+
     def to_dict(self):
         """ """
 

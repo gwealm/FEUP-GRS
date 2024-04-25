@@ -2,7 +2,6 @@
 """
 
 import yaml
-from yaml import Loader
 
 from .manifest import ManifestTemplate, Manifest
 from .models.traits import GenerateConfig
@@ -42,21 +41,21 @@ class DockerComposeManifestHandler:
         Args:
             manifest (Manifest): the manifest to dump
         """
-        
-        config = {}
 
-        config["version"] = manifest.version
+        config = {}
 
         services = {}
         for service_name, service in manifest.services.items():
             services[service_name] = service.to_dict()
-        config['services'] = services
+        config["services"] = services
 
         if len(manifest.configs) > 0:
             configs = {}
 
             for config_name, config in manifest.configs.items():
-                value = config.to_dict() if isinstance(config, GenerateConfig) else config
+                value = (
+                    config.to_dict() if isinstance(config, GenerateConfig) else config
+                )
 
                 configs[config_name] = value if value != config_name else {}
 
@@ -66,8 +65,10 @@ class DockerComposeManifestHandler:
             secrets = {}
 
             for secret_name, secret in manifest.secrets.items():
-                value = secret.to_dict() if isinstance(secret, GenerateConfig) else secret
-                
+                value = (
+                    secret.to_dict() if isinstance(secret, GenerateConfig) else secret
+                )
+
                 secrets[secret_name] = value if value != secret_name else {}
 
             config["secrets"] = secrets
@@ -76,7 +77,11 @@ class DockerComposeManifestHandler:
             networks = {}
 
             for network_name, network in manifest.networks.items():
-                value = network.to_dict() if isinstance(network, GenerateConfig) else network
+                value = (
+                    network.to_dict()
+                    if isinstance(network, GenerateConfig)
+                    else network
+                )
 
                 networks[network_name] = value if value != network_name else {}
 
@@ -86,7 +91,9 @@ class DockerComposeManifestHandler:
             volumes = {}
 
             for volume_name, volume in manifest.volumes.items():
-                value = volume.to_dict() if isinstance(volume, GenerateConfig) else volume
+                value = (
+                    volume.to_dict() if isinstance(volume, GenerateConfig) else volume
+                )
 
                 volumes[volume_name] = value if value != volume_name else {}
 

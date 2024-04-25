@@ -1,9 +1,8 @@
 from dataclasses import dataclass, field
 
-import yaml
-from yaml import Loader
-
 from typing import Optional
+import yaml
+
 
 from .models import Config, Service, Secret, Network, Volume
 from .models.types import Value
@@ -15,7 +14,6 @@ class Manifest:
     Representation of a docker-compose.yaml manifest file.
     """
 
-    version: float = 3.8
     services: dict[str, Service] = field(default_factory=dict)
     networks: dict[str, Network | str] = field(default_factory=dict)
     volumes: dict[str, Volume | str] = field(default_factory=dict)

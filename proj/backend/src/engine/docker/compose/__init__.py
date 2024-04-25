@@ -3,29 +3,56 @@
 
 import subprocess
 import shlex
+import tempfile
+from typing import Optional
 
 from .manifest import Manifest
+from .handler import DockerComposeManifestHandler
 
 
 class DockerCompose:
     """_summary_"""
 
-    def __init__(self):
-        pass
+    def __init__(self, manifest_handler: Optional[DockerComposeManifestHandler] = None):
+        self.handler = (
+            manifest_handler
+            if manifest_handler is not None
+            else DockerComposeManifestHandler()
+        )
 
     def provision(self, manifest: Manifest):
-        """_summary_
+        """Provisions the project representation by the given Manifest
 
         Args:
-            manifest (DockerComposeManifest): _description_
+            manifest (Manifest): a Manifest object representing a Compose project
         """
+
+        manifest_str = self.handler.dump(manifest)
+        with tempfile.NamedTemporaryFile(mode="+w", encoding="utf-8") as tmp_file:
+
+            with tmp_file.file as f:
+                f.write(manifest_str)
+
+            subprocess.run(
+                shlex.split(f"docker compose -f {tmp_file.name} up -d"), check=True
+            )
 
     def tear_down(self, manifest: Manifest):
-        """_summary_
+        """Tears down the Compose project represented by the given Manifest
 
         Args:
-            manifest (DockerComposeManifest): _description_
+            manifest (Manifest): a Manifest object representing a Compose project
         """
+
+        manifest_str = self.handler.dump(manifest)
+        with tempfile.NamedTemporaryFile(mode="+w", encoding="utf-8") as tmp_file:
+
+            with tmp_file.file as f:
+                f.write(manifest_str)
+
+            subprocess.run(
+                shlex.split(f"docker compose -f {tmp_file.name} down"), check=True
+            )
 
     def is_available(self) -> bool:
         """Returns whether Docker compose is available on this system.

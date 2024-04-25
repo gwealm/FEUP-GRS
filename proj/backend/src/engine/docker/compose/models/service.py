@@ -213,7 +213,7 @@ class Volume(GenerateConfig):
         )
 
 
-@dataclass #TODO
+@dataclass  # TODO
 class FailureRestartPolicy:
     """
     Policy applied when restarting a service container.
@@ -390,7 +390,7 @@ class LoggingConfig(GenerateConfig):
         )
 
 
-@dataclass #TODO
+@dataclass  # TODO
 class IPCService:
     """
     Represents another service's IPC namespace.
@@ -402,7 +402,7 @@ class IPCService:
         return f"service:{self.service}"
 
 
-@dataclass #TODO
+@dataclass  # TODO
 class NetworkMode:
     """
     Represents another service's network.

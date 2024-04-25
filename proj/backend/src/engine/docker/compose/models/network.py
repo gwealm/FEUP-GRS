@@ -5,7 +5,7 @@ Classes related to network configuration specifications inside a docker-compose.
 from dataclasses import dataclass
 from typing import Optional
 
-from .traits import HasLabels, CanBeExternal
+from .traits import HasLabels, CanBeExternal, GenerateConfig
 from .types import Value
 
 from ....models.network import NetworkConverter, Network as AppNetwork
@@ -19,7 +19,7 @@ class DriverOptions(dict[str, Value]):
 
 
 @dataclass(kw_only=True, frozen=True)
-class IPAMConfig:
+class IPAMConfig(GenerateConfig):
     """
     Configuration for an IPAM block.
     """
@@ -52,7 +52,7 @@ class IPAMConfig:
 
 
 @dataclass(kw_only=True, frozen=True)
-class IPAM:
+class IPAM(GenerateConfig):
     """
     IP Address Management options for a given network.
     """
@@ -91,7 +91,7 @@ class IPAM:
 
 
 @dataclass(kw_only=True, frozen=True, slots=True)
-class Network(HasLabels, CanBeExternal):
+class Network(HasLabels, CanBeExternal, GenerateConfig):
     """
     Representation of a docker-compose.yaml network mapping block.
     """

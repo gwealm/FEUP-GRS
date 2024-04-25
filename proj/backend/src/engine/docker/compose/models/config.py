@@ -5,7 +5,7 @@ Classes related to Docker Swarm configuration block inside a docker-compose.yaml
 from dataclasses import dataclass
 from typing import Optional
 
-from .traits import CanBeExternal
+from .traits import CanBeExternal, GenerateConfig
 from .types import Value
 
 
@@ -17,7 +17,7 @@ class DriverOptions(dict[str, str | int | float | bool]):
 
 
 @dataclass(kw_only=True, frozen=True, slots=True)
-class Config(CanBeExternal):
+class Config(CanBeExternal, GenerateConfig):
     """
     A configuration object for Docker Swarm.
     """

@@ -5,7 +5,7 @@ Classes related to volume configuration specifications inside a docker-compose.y
 from typing import Optional
 from dataclasses import dataclass
 
-from .traits import HasLabels, CanBeExternal
+from .traits import HasLabels, CanBeExternal, GenerateConfig
 from .types import Value
 
 
@@ -17,7 +17,7 @@ class DriverOptions(dict[str, Value]):
 
 
 @dataclass(kw_only=True, frozen=True, slots=True)
-class Volume(HasLabels, CanBeExternal):
+class Volume(HasLabels, CanBeExternal, GenerateConfig):
     """
     Representation of a docker-compose.yaml volume mapping block.
     """

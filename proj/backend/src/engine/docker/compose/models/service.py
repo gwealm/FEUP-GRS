@@ -5,12 +5,12 @@ Classes related to service configuration specifications inside a docker-compose.
 from typing import Optional, Literal
 from dataclasses import dataclass, field
 
-from .traits import HasLabels
+from .traits import HasLabels, GenerateConfig
 from .types import Duration, ByteValue, Value
 
 
 @dataclass
-class BindProperties:
+class BindProperties(GenerateConfig):
     """
     Properties for bind mounts.
     """
@@ -53,7 +53,7 @@ class BindProperties:
 
 
 @dataclass
-class VolumeProperties:
+class VolumeProperties(GenerateConfig):
     """
     Properties for volumes.
     """
@@ -86,7 +86,7 @@ class VolumeProperties:
 
 
 @dataclass
-class TMPFSProperties:
+class TMPFSProperties(GenerateConfig):
     """
     Properties for TMPFS volumes.
     """
@@ -123,7 +123,7 @@ class TMPFSProperties:
 
 
 @dataclass
-class Volume:
+class Volume(GenerateConfig):
     """
     Volume mounted on a container through a filesystem bind.
     """
@@ -213,7 +213,7 @@ class Volume:
         )
 
 
-@dataclass
+@dataclass #TODO
 class FailureRestartPolicy:
     """
     Policy applied when restarting a service container.
@@ -231,7 +231,7 @@ class FailureRestartPolicy:
 
 
 @dataclass
-class PortSpec:
+class PortSpec(GenerateConfig):
     """
     Specification o an exposed port.
     """
@@ -298,7 +298,7 @@ class PortSpec:
 
 
 @dataclass
-class NetworkSpec:
+class NetworkSpec(GenerateConfig):
     """
     Configuration of network attachments for this service's container.
     """
@@ -358,7 +358,7 @@ class NetworkSpec:
 
 
 @dataclass
-class LoggingConfig:
+class LoggingConfig(GenerateConfig):
     """
     Logging configuration for this service.
     """
@@ -390,7 +390,7 @@ class LoggingConfig:
         )
 
 
-@dataclass
+@dataclass #TODO
 class IPCService:
     """
     Represents another service's IPC namespace.
@@ -402,7 +402,7 @@ class IPCService:
         return f"service:{self.service}"
 
 
-@dataclass
+@dataclass #TODO
 class NetworkMode:
     """
     Represents another service's network.
@@ -415,7 +415,7 @@ class NetworkMode:
 
 
 @dataclass
-class HealthCheck:
+class HealthCheck(GenerateConfig):
     """
     Specification of how to perform an health check to this service's containers.
     """
@@ -462,7 +462,7 @@ class HealthCheck:
 
 
 @dataclass
-class ExtensionsSpec:
+class ExtensionsSpec(GenerateConfig):
     """
     Specification for service extensions
     """
@@ -495,7 +495,7 @@ class ExtensionsSpec:
 
 
 @dataclass
-class EnvFile:
+class EnvFile(GenerateConfig):
     """
     Specification of an environment file to load.
     """
@@ -528,7 +528,7 @@ class EnvFile:
 
 
 @dataclass
-class DevelopmentWatch:
+class DevelopmentWatch(GenerateConfig):
     """
     Rule applied by Compose to monitor source code for changes.
     """
@@ -578,7 +578,7 @@ class DevelopmentWatch:
 
 
 @dataclass
-class Development:
+class Development(GenerateConfig):
     """
     Specifications of how to maintain a service in sync with source.
     """
@@ -608,7 +608,7 @@ class Development:
 
 
 @dataclass
-class UpdateConfig:
+class UpdateConfig(GenerateConfig):
     """
     Specifications for service updates.
     """
@@ -675,7 +675,7 @@ class UpdateConfig:
 
 
 @dataclass
-class RollbackConfig:
+class RollbackConfig(GenerateConfig):
     """
     Specifications for service update rollbacks.
     """
@@ -740,7 +740,7 @@ class RollbackConfig:
 
 
 @dataclass
-class RestartPolicy:
+class RestartPolicy(GenerateConfig):
     """
     Configurations for how to restart a container when it exits.
     """
@@ -789,7 +789,7 @@ class RestartPolicy:
 
 
 @dataclass
-class Devices:
+class Devices(GenerateConfig):
     """
     Specifications of the reservations of the devices a container can use.
     """
@@ -845,7 +845,7 @@ class Devices:
 
 
 @dataclass
-class ResourceSpec:
+class ResourceSpec(GenerateConfig):
     """
     Specification for a platform's resource constraints.
     """
@@ -895,7 +895,7 @@ class ResourceSpec:
 
 
 @dataclass
-class Resources:
+class Resources(GenerateConfig):
     """
     Configures physical resource constraints for container to run on platform
     """
@@ -936,7 +936,7 @@ class Resources:
 
 
 @dataclass
-class Placement:
+class Placement(GenerateConfig):
     """
     Specifies constraints and preferences for the platform
     to select a physical node to run service containers.
@@ -970,7 +970,7 @@ class Placement:
 
 
 @dataclass
-class Deployment(HasLabels):
+class Deployment(HasLabels, GenerateConfig):
     """
     Specifies deployment options for this service.
     """
@@ -1066,7 +1066,7 @@ class Deployment(HasLabels):
 
 
 @dataclass
-class DependencyConfig:
+class DependencyConfig(GenerateConfig):
     """
     Dependency configurations for a service.
     """
@@ -1115,7 +1115,7 @@ class DependencyConfig:
 
 
 @dataclass
-class CredentialSpecFile:
+class CredentialSpecFile(GenerateConfig):
     """
     Specifies a CredentialSpec inside a file
     """
@@ -1142,7 +1142,7 @@ class CredentialSpecFile:
 
 
 @dataclass
-class CredentialSpecRegistry:
+class CredentialSpecRegistry(GenerateConfig):
     """
     Specifies a CredentialSpec inside a registry
     """
@@ -1171,7 +1171,7 @@ class CredentialSpecRegistry:
 
 
 @dataclass
-class CredentialSpecConfig:
+class CredentialSpecConfig(GenerateConfig):
     """
     Specifies a CredentialSpec inside a config
     """
@@ -1198,13 +1198,13 @@ class CredentialSpecConfig:
 
 
 @dataclass
-class BlockIOConfig:
+class BlockIOConfig(GenerateConfig):
     """
     Defines options related to block device IO operations by the service.
     """
 
     @dataclass
-    class BPS:
+    class BPS(GenerateConfig):
         """
         Limit configuration in bytes/second
         """
@@ -1237,7 +1237,7 @@ class BlockIOConfig:
             return BlockIOConfig.BPS(path=bps_spec.get("path"), rate=rate)
 
     @dataclass
-    class IOPS:
+    class IOPS(GenerateConfig):
         """
         Limit configuration in operations/second
         """
@@ -1268,7 +1268,7 @@ class BlockIOConfig:
             )
 
     @dataclass
-    class WeightDevice:
+    class WeightDevice(GenerateConfig):
         """
         Define bandwidth for a given device.
         """
@@ -1357,13 +1357,13 @@ class BlockIOConfig:
 
 
 @dataclass
-class ULimits:
+class ULimits(GenerateConfig):
     """
     Defines resource limits for a container
     """
 
     @dataclass
-    class NumberOfFiles:
+    class NumberOfFiles(GenerateConfig):
         """
         Soft and hard limits for a container.
         """
@@ -1424,7 +1424,7 @@ class ULimits:
 
 
 @dataclass
-class Secret:
+class Secret(GenerateConfig):
     """
     Grants access to sensitive data defined by secrets on a per-service build basis.
     """
@@ -1475,7 +1475,7 @@ class Secret:
 
 
 @dataclass
-class Config:
+class Config(GenerateConfig):
     """
     Configs allow services to adapt their behavior without the need to rebuild a Docker image
     """
@@ -1526,7 +1526,7 @@ class Config:
 
 
 @dataclass
-class BuildSecretMap:
+class BuildSecretMap(GenerateConfig):
     """
     Grants access to sensitive data defined by secrets on a per-service build basis.
     """
@@ -1591,7 +1591,7 @@ class BuildSpecArgsMap(dict[str, Value]):
 
 
 @dataclass
-class BuildSpec(HasLabels):
+class BuildSpec(HasLabels, GenerateConfig):
     """
     Specification of build configurations for a given service
     """
@@ -1763,7 +1763,7 @@ class BuildSpec(HasLabels):
 
 
 @dataclass(kw_only=True, slots=True)
-class Service(HasLabels):
+class Service(HasLabels, GenerateConfig):
     """
     Representation of a docker-compose.yaml service mapping block.
     """
@@ -2520,7 +2520,14 @@ class Service(HasLabels):
         if "volumes" in service_spec:
             volumes = service_spec.get("volumes")
 
-            volumes = [Volume.parse(volume_spec) if isinstance(volume_spec, dict) else volume_spec for volume_spec in volumes]
+            volumes = [
+                (
+                    Volume.parse(volume_spec)
+                    if isinstance(volume_spec, dict)
+                    else volume_spec
+                )
+                for volume_spec in volumes
+            ]
 
         volumes_from = service_spec.get("volumes_from", None)
 

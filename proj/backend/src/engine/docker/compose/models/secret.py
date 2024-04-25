@@ -5,12 +5,12 @@ Classes related to network configuration specifications inside a docker-compose.
 from dataclasses import dataclass
 from typing import Optional
 
-from .traits import CanBeExternal
+from .traits import CanBeExternal, GenerateConfig
 from .types import Value
 
 
 @dataclass
-class Secret(CanBeExternal):
+class Secret(CanBeExternal, GenerateConfig):
     """
     A secrets object for Docker Swarm.
     """

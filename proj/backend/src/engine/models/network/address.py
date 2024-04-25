@@ -121,7 +121,7 @@ class CIDR:
             bool: whether the given address belongs to this address range or not
         """
 
-        return self.base_address <= address <= (self.base_address + self.mask_size)
+        return self.base_address <= address <= (self.base_address + 2^(32 - self.mask_size))
 
     def contains(self, address: IPAddress) -> bool:
         """Checks if the given address is part of this address range, denoted in CIDR notation.

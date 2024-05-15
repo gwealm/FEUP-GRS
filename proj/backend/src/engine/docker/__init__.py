@@ -2,12 +2,11 @@
 Classes and methods related to a Docker deployment engine.
 """
 
-from typing import Any
 from .compose import DockerCompose
 from .compose.models import *
 
 from .. import Engine
-from ..models.network import NetworkConverter
+from ..models import NetworkConverter, Deployment
 
 
 class Docker(Engine):
@@ -23,7 +22,7 @@ class Docker(Engine):
         # TODO: improve this configuration
         self.converters = {NetworkConverter: DockerNetworkConverter}
 
-    def deploy(self, config: Any) -> None:
+    def deploy(self, config: Deployment) -> None:
         # TODO: implement this function
 
         manifest = None

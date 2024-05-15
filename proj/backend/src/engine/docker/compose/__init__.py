@@ -33,9 +33,12 @@ class DockerCompose:
             with tmp_file.file as f:
                 f.write(manifest_str)
 
-            subprocess.run(
-                shlex.split(f"docker compose -f {tmp_file.name} up -d"), check=True
-            )
+            try:
+                subprocess.run(
+                    shlex.split(f"docker compose -f {tmp_file.name} up -d"), check=True, capture_output=True
+                )
+            except subprocess.CalledProcessError:
+                pass
 
     def tear_down(self, manifest: Manifest):
         """Tears down the Compose project represented by the given Manifest
@@ -50,9 +53,12 @@ class DockerCompose:
             with tmp_file.file as f:
                 f.write(manifest_str)
 
-            subprocess.run(
-                shlex.split(f"docker compose -f {tmp_file.name} down"), check=True
-            )
+            try:
+                subprocess.run(
+                    shlex.split(f"docker compose -f {tmp_file.name} down"), check=True, capture_output=True
+                )
+            except subprocess.CalledProcessError:
+                pass
 
     def is_available(self) -> bool:
         """Returns whether Docker compose is available on this system.
@@ -62,7 +68,9 @@ class DockerCompose:
         """
 
         try:
-            subprocess.run(shlex.split("docker compose version"), check=True)
+            subprocess.run(
+                shlex.split("docker compose version"), check=True, capture_output=True
+            )
             return True
         except subprocess.CalledProcessError:
             return False

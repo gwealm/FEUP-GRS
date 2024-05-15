@@ -51,7 +51,7 @@ class GenerateConfig(ABC):
 
         config = {}
 
-        attrs = [attr for attr in dir(self) if self._filter_attr(attr)]
+        attrs = (attr for attr in dir(self) if self._filter_attr(attr))
 
         for attr in attrs:
             value = getattr(self, attr)

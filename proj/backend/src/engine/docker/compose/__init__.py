@@ -10,6 +10,7 @@ from .manifest import Manifest
 from .handler import DockerComposeManifestHandler
 
 
+# FIXME: advanced development would do this through the docker IPC socket.
 class DockerCompose:
     """_summary_"""
 

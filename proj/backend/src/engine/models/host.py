@@ -9,6 +9,15 @@ from ..converter import Converter
 class Host:
     """ """
 
+    image: str
+    """The image to deploy on this host."""
+
+    name: str
+    """The name of this host."""
+
+    def __init__(self, name: str, image: str):
+        self.name = name
+        self.image = image
 
 T = TypeVar("T")
 

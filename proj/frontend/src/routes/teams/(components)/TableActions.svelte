@@ -2,6 +2,7 @@
 	import Ellipsis from 'lucide-svelte/icons/ellipsis';
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
 	import { Button } from '$lib/components/ui/button';
+	import { toast } from 'svelte-sonner';
 
 	export let id: number | string;
 </script>
@@ -17,7 +18,15 @@
 		<DropdownMenu.Group>
 			<DropdownMenu.Label>Actions</DropdownMenu.Label>
 			<DropdownMenu.Item
-				on:click={() => navigator.clipboard.writeText(`${id}`)}
+				on:click={() => {
+					const toastId = toast.info(`Deleted team ${id}`, {
+						description: 'Sunday, December 03, 2023 at 9:00 AM',
+						action: {
+							label: 'Close',
+							onClick: () => toast.dismiss(toastId)
+						}
+					});
+				}}
 				class="text-red-500 accent-red-500 hover:text-accent"
 			>
 				<!-- TODO: make the text change color to red when hovered -->

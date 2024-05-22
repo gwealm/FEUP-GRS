@@ -1,37 +1,10 @@
 <script lang="ts">
-	import type { Team } from '../../types';
+	import type { LayoutData } from './$types';
 	import DataTable from './(components)/Table.svelte';
 
-	export let teams: Team[] = [];
+	export let data: LayoutData;
 
-	teams = [
-		{
-			id: 2134,
-			name: 'RH',
-			services: [
-				{
-					name: 'Proxy'
-				}
-			]
-		},
-		{
-			id: 23455634,
-			name: 'UI/UX',
-			services: [
-				{
-					name: 'Proxy'
-				},
-				{
-					name: 'Git'
-				}
-			]
-		},
-		{
-			id: 23456576,
-			name: 'DevOps',
-			services: []
-		}
-	];
+	$: teams = data.teams;
 </script>
 
 <header class="mb-5">

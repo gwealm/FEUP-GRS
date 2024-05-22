@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { Service as IService } from '../../../types';
-	import Service from './Service.svelte';
+	import Service from './ServiceIcon.svelte';
 
 	export let services: IService[] = [];
 </script>

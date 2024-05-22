@@ -6,7 +6,7 @@
 	import { readable } from 'svelte/store';
 	import TableActions from './TableActions.svelte';
 	import Button from '$lib/components/ui/button/button.svelte';
-	import Services from './Services.svelte';
+	import Services from './ServiceIcons.svelte';
 
 	export let teams: Team[] = [];
 

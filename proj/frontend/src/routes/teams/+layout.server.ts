@@ -10,9 +10,11 @@ export const load: LayoutServerLoad = async () => {
             services: [
                 {
                     id: 234,
-                    name: 'Proxy'
+                    name: 'Proxy',
+                    ipAddress: '192.168.0.1'
                 }
-            ]
+            ],
+            cidr: '192.168.0.0/24'
         },
         {
             id: 23455634,
@@ -20,18 +22,22 @@ export const load: LayoutServerLoad = async () => {
             services: [
                 {
                     id: 45674,
-                    name: 'Proxy'
+                    name: 'Proxy',
+                    ipAddress: '192.168.1.1'
                 },
                 {
                     id: 23907,
-                    name: 'Git'
+                    name: 'Git',
+                    ipAddress: '192.168.1.2'
                 }
-            ]
+            ],
+            cidr: '192.168.1.0/24'
         },
         {
             id: 23456576,
             name: 'DevOps',
-            services: []
+            services: [],
+            cidr: '192.168.2.0/24'
         }
     ];
 

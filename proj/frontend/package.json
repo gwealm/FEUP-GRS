@@ -17,6 +17,7 @@
 		"@sveltejs/vite-plugin-svelte": "^3.0.0",
 		"@tailwindcss/typography": "^0.5.10",
 		"@types/eslint": "^8.56.0",
+		"@types/feather-icons": "^4.29.4",
 		"@typescript-eslint/eslint-plugin": "^7.0.0",
 		"@typescript-eslint/parser": "^7.0.0",
 		"autoprefixer": "^10.4.16",
@@ -39,6 +40,7 @@
 	"dependencies": {
 		"bits-ui": "^0.21.9",
 		"clsx": "^2.1.1",
+		"feather-icons": "^4.29.2",
 		"lucide-svelte": "^0.378.0",
 		"svelte-radix": "^1.1.0",
 		"tailwind-merge": "^2.3.0",

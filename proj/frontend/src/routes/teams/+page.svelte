@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { Team } from '$lib/types';
+	import type { Team } from '../../types';
 	import DataTable from './(components)/Table.svelte';
 
 	export let teams: Team[] = [];
@@ -34,7 +34,7 @@
 	];
 </script>
 
-<header>
-	<h1>Your organization's teams:</h1>
+<header class="mb-5">
+	<h1 class="text-xl">Your organization's teams:</h1>
 </header>
 <DataTable {teams} />

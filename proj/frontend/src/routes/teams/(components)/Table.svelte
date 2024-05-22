@@ -1,6 +1,6 @@
 <script lang="ts">
 	import * as Table from '$lib/components/ui/table';
-	import type { Team } from '$lib/types';
+	import type { Team } from '../../../types';
 	import { createTable, Render, Subscribe, createRender } from 'svelte-headless-table';
 	import { addPagination } from 'svelte-headless-table/plugins';
 	import { readable } from 'svelte/store';

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { Service } from '$lib/types';
+	import type { Service } from '../../../types';
 
 	export let service: Service;
 </script>

@@ -2,6 +2,7 @@
 	import Icon from './Icon.svelte';
 	import { page } from '$app/stores';
 	import * as Breadcrumb from '$lib/components/ui/breadcrumb/';
+	import Auth from './Auth.svelte';
 
 	$: path = $page.url.pathname.split('/');
 </script>
@@ -17,7 +18,10 @@
 
 					{#if !isLastToken}
 						<Breadcrumb.Item>
-							<Breadcrumb.Link href={currentPath}>{pathToken ? pathToken : '/'}</Breadcrumb.Link>
+							<Breadcrumb.Link
+								href={currentPath ? currentPath : '/'}
+								data-sveltekit-preload-data="tap">{pathToken ? pathToken : '/'}</Breadcrumb.Link
+							>
 						</Breadcrumb.Item>
 						<Breadcrumb.Separator />
 					{:else}
@@ -29,4 +33,5 @@
 			</Breadcrumb.List>
 		</Breadcrumb.Root>
 	</div>
+	<Auth />
 </header>

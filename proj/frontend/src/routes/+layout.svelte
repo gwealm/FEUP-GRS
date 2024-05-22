@@ -7,7 +7,7 @@
 </script>
 
 <Header />
-<main class="p-20">
+<main class="flex flex-1 flex-col p-20">
 	<slot />
 </main>
 <Toaster />

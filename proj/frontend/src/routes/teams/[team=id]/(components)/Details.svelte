@@ -18,11 +18,11 @@
 		{/if}
 	</div>
 	<p class="text-lg">
-		<span class="text-slate-500 opacity-75">Number of services:</span>
+		<span class="text-slate-500">Number of services:</span>
 		<span class="font-bold text-gray-500">{team.services.length}</span>
 	</p>
 	<p class="text-lg">
-		<span class="text-slate-500 opacity-75">Internal Company CIDR block:</span>
+		<span class="text-slate-500">Team Network Address Space:</span>
 		<span class="font-bold text-gray-500">{team.cidr}</span>
 	</p>
 </article>

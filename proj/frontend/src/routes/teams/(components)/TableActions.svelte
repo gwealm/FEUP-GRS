@@ -3,8 +3,10 @@
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
 	import { Button } from '$lib/components/ui/button';
 	import { toast } from 'svelte-sonner';
+	import type { Team } from '../../../types';
+	import { goto } from '$app/navigation';
 
-	export let id: number | string;
+	export let team: Team;
 </script>
 
 <DropdownMenu.Root>
@@ -18,14 +20,21 @@
 		<DropdownMenu.Group>
 			<DropdownMenu.Label>Actions</DropdownMenu.Label>
 			<DropdownMenu.Item
-				on:click={() => {
-					const toastId = toast.info(`Deleted team ${id}`, {
-						description: 'Sunday, December 03, 2023 at 9:00 AM',
-						action: {
-							label: 'Close',
-							onClick: () => toast.dismiss(toastId)
-						}
+				on:click={async () => {
+					const toastId = toast.info(`Deleting ${team.name}`, {
+						description: new Date().toLocaleString()
 					});
+
+					// TODO: Implement team deletion service/API call, dismiss on response.
+					await new Promise((resolve) => setTimeout(resolve, 2000));
+
+					toast.info(`Deleted ${team.name}`, {
+						description: new Date().toLocaleString()
+					});
+					toast.dismiss(toastId);
+
+					// FIXME: is this needed?
+					await goto('/');
 				}}
 				class="text-red-500 accent-red-500 hover:text-accent"
 			>
@@ -33,7 +42,7 @@
 				Delete team
 			</DropdownMenu.Item>
 			<DropdownMenu.Item>
-				<a href="/teams/{id}">Open team</a>
+				<a href="/teams/{team.id}">Open team</a>
 			</DropdownMenu.Item>
 		</DropdownMenu.Group>
 	</DropdownMenu.Content>

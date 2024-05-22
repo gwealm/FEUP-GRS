@@ -31,9 +31,9 @@
 			cell: ({ value }) => createRender(Services, { services: value })
 		}),
 		table.column({
-			accessor: ({ id }) => id,
+			accessor: ({ id }) => teams.find((team) => team.id === id)!,
 			header: '',
-			cell: ({ value }) => createRender(TableActions, { id: value })
+			cell: ({ value }) => createRender(TableActions, { team: value })
 		})
 	]);
 

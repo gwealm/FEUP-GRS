@@ -10,10 +10,10 @@
 	{#if loggedIn}
 		<p>You are logged in!</p>
 		<Separator orientation="vertical" />
-		<Button on:click={() => (loggedIn = true)}>Sign Up</Button>
+		<Button on:click={() => (loggedIn = true)}><a href="#">Sign Up</a></Button>
 	{:else}
-		<Button on:click={() => (loggedIn = true)}>Sign In</Button>
+		<Button><a href="/login">Sign In</a></Button>
 		<Separator orientation="vertical" />
-		<Button on:click={() => (loggedIn = false)}>Sign Out</Button>
+		<Button on:click={() => (loggedIn = false)}><a href="#">Sign Out</a></Button>
 	{/if}
 </div>

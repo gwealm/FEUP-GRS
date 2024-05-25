@@ -22,14 +22,14 @@
 		<Form.Field {form} name="username">
 			<Form.Control let:attrs>
 				<Form.Label>Username</Form.Label>
-				<Input {...attrs} bind:value={$formData.username} />
+				<Input {...attrs} bind:value={$formData.username} required />
 			</Form.Control>
 			<Form.FieldErrors />
 		</Form.Field>
 		<Form.Field {form} name="password">
 			<Form.Control let:attrs>
 				<Form.Label>Password</Form.Label>
-				<Input type="password" {...attrs} bind:value={$formData.password} />
+				<Input type="password" {...attrs} bind:value={$formData.password} required />
 			</Form.Control>
 			<Form.FieldErrors />
 		</Form.Field>

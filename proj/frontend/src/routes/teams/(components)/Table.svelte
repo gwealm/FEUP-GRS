@@ -18,22 +18,25 @@
 
 	const columns = table.createColumns([
 		table.column({
+			id: 'id',
 			accessor: 'id',
 			header: 'Team ID'
 		}),
 		table.column({
+			id: 'name',
 			accessor: 'name',
 			header: 'Team Name'
 		}),
 		table.column({
+			id: 'services',
 			accessor: 'services',
 			header: 'Services',
 			cell: ({ value }) => createRender(Services, { services: value })
 		}),
 		table.column({
-			accessor: ({ id }) => teams.find((team) => team.id === id)!,
+			accessor: (team) => team,
 			header: '',
-			cell: ({ value }) => createRender(TableActions, { team: value })
+			cell: ({ value: team, row }) => createRender(TableActions, { team, row })
 		})
 	]);
 
@@ -64,7 +67,7 @@
 			<Table.Body {...$tableBodyAttrs}>
 				{#each $pageRows as row (row.id)}
 					<Subscribe rowAttrs={row.attrs()} let:rowAttrs>
-						<Table.Row {...rowAttrs}>
+						<Table.Row {...rowAttrs} id={`table-row-${row.id}`}>
 							{#each row.cells as cell (cell.id)}
 								<Subscribe attrs={cell.attrs()} let:attrs>
 									<Table.Cell {...attrs}>

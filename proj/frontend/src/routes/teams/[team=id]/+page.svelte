@@ -82,7 +82,7 @@
 </div>
 {#if showLoading}
 	<div class="absolute left-0 top-0 h-full w-full">
-		<div class="absolute left-0 top-0 flex h-full w-full backdrop-blur"></div>
+		<div class="absolute left-0 top-0 flex h-full w-full bg-background/80 backdrop-blur"></div>
 		<div
 			class="absolute left-1/2 top-1/2 flex h-1/2 w-[40em] max-w-[40em] -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center gap-5"
 		>

@@ -15,7 +15,7 @@ services:
       - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js
   mongo-express:
     image: mongo-express
-    container_name: lgp-mongo-express
+    container_name: grs-mongo-express
     restart: always
     ports:
       - $ME_CONFIG_PORT:8081

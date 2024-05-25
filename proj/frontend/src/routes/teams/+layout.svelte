@@ -13,8 +13,8 @@
 
 			{#if !isLastToken}
 				<Breadcrumb.Item>
-					<Breadcrumb.Link href={currentPath ? currentPath : '/'} data-sveltekit-preload-data="tap"
-						>{pathToken ? pathToken : '/'}</Breadcrumb.Link
+					<Breadcrumb.Link href={currentPath || '/'} data-sveltekit-preload-data="tap"
+						>{pathToken || '/'}</Breadcrumb.Link
 					>
 				</Breadcrumb.Item>
 				<Breadcrumb.Separator />

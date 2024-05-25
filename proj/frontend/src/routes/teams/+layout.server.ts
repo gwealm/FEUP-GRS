@@ -4,7 +4,7 @@ import type { LayoutServerLoad } from './$types';
 export const load: LayoutServerLoad = async () => {
 	const teams: Team[] = [
 		{
-			id: 2134,
+			id: '2134',
 			name: 'HR',
 			description: 'Human Resources',
 			services: [
@@ -17,7 +17,7 @@ export const load: LayoutServerLoad = async () => {
 			cidr: '192.168.0.0/24'
 		},
 		{
-			id: 23455634,
+			id: '23455634',
 			name: 'UI/UX',
 			services: [
 				{
@@ -34,7 +34,7 @@ export const load: LayoutServerLoad = async () => {
 			cidr: '192.168.1.0/24'
 		},
 		{
-			id: 23456576,
+			id: '23456576',
 			name: 'DevOps',
 			services: [],
 			cidr: '192.168.2.0/24'

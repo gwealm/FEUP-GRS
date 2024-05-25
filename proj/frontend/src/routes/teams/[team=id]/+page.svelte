@@ -7,6 +7,7 @@
 	import { toast } from 'svelte-sonner';
 	import { goto } from '$app/navigation';
 	import * as AlertDialog from '$lib/components/ui/alert-dialog';
+	import { deleteTeam } from '../../../services/teams';
 
 	export let data: PageData;
 
@@ -52,8 +53,7 @@
 							on:click={async () => {
 								showLoading = true;
 
-								// TODO: Implement team deletion service/API call, dismiss on response.
-								await new Promise((resolve) => setTimeout(resolve, 2000));
+								await deleteTeam(team.id);
 
 								toast.info(`Deleted ${team.name}`, {
 									description: new Date().toLocaleString()
@@ -82,7 +82,7 @@
 </div>
 {#if showLoading}
 	<div class="absolute left-0 top-0 h-full w-full">
-		<div class="absolute left-0 top-0 flex h-full w-full bg-background/80 backdrop-blur"></div>
+		<div class="bg-background/80 absolute left-0 top-0 flex h-full w-full backdrop-blur"></div>
 		<div
 			class="absolute left-1/2 top-1/2 flex h-1/2 w-[40em] max-w-[40em] -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center gap-5"
 		>

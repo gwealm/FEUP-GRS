@@ -6,7 +6,7 @@ export const load: PageServerLoad = async ({ parent, params }) => {
 	const { team: teamId } = params;
 
 	for (const team of teams) {
-		if (team.id === Number(teamId)) {
+		if (team.id === teamId) {
 			return { team };
 		}
 	}

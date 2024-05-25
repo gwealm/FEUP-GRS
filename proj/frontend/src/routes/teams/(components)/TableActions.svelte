@@ -8,6 +8,7 @@
 	import type { BodyRow } from 'svelte-headless-table';
 	import { onMount } from 'svelte';
 	import Icon from '../../(components)/Icon.svelte';
+	import { deleteTeam } from '../../../services/teams';
 
 	export let team: Team;
 	export let row: BodyRow<Team>;
@@ -37,16 +38,16 @@
 
 			elem?.classList.toggle('blur');
 
-			// TODO: Implement team deletion service/API call, dismiss on response.
-			await new Promise((resolve) => setTimeout(resolve, 2000));
+			await deleteTeam(team.id);
 
 			toast.info(`Deleted ${team.name}`, {
 				description: new Date().toLocaleString()
 			});
 			toast.dismiss(toastId);
 
+			// Optimistic update xD
 			elem?.remove();
-			// FIXME: is this needed?
+
 			await goto('/');
 		}}
 	>

@@ -14,7 +14,7 @@ const ServiceSchema = z.object({
 });
 
 const TeamSchema = z.object({
-	id: z.number().min(0),
+	id: z.string().min(0),
 	name: z.string().min(3).max(20),
 	description: z.string().optional(),
 

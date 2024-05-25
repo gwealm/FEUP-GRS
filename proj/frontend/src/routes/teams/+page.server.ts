@@ -21,9 +21,6 @@ export const actions: Actions = {
 			});
 		}
 
-		console.log("aaa");
-
-
 		// TODO: validate creds;
 
 		// TODO: set cookie;

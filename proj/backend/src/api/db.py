@@ -1,4 +1,3 @@
-# src/api/db.py
 from pymongo import MongoClient
 from pymongo.errors import DuplicateKeyError
 from pydantic import BaseModel

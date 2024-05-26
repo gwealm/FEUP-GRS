@@ -1,15 +1,13 @@
-import { fail } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
+import type { Team } from '../../../types';
+// import { fail } from '@sveltejs/kit';
 
-export const load: PageServerLoad = async ({ parent, params }) => {
-	const { teams } = await parent();
-	const { team: teamId } = params;
+export const load: PageServerLoad = async ({ fetch, params: { team: teamId } }) => {
+	const response = await fetch(`/api/teams/${teamId}`);
 
-	for (const team of teams) {
-		if (team.id === teamId) {
-			return { team };
-		}
-	}
+	// TODO: add error history
 
-	return fail(403, { message: 'Unknown team id' });
+	const team: Team = await response.json();
+
+	return { team };
 };

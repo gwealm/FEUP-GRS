@@ -1,8 +1,8 @@
 import type { RequestHandler } from '@sveltejs/kit';
-import { sleep } from '../../../services/helper';
+import { teams } from './data';
 
-export const GET: RequestHandler = async ({ fetch, url }) => {
-	await sleep(2000);
+export const GET: RequestHandler = async () => {
+	const body = JSON.stringify(Object.values(teams));
 
-	return new Response();
+	return new Response(body);
 };

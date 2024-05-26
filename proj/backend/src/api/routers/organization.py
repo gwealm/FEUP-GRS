@@ -1,46 +1,25 @@
-from fastapi import APIRouter
-from pydantic import BaseModel
-from typing import List
-
-from .team import Team  # Importing Team model from a file named team.py
+from fastapi import APIRouter, Depends, HTTPException
+from ..db import Database, Organization
+from ..dependencies import get_db
 
 router = APIRouter()
 
-
-class Organization(BaseModel):
-    """
-    Represents an organization (list of teams).
-
-    Attributes:
-        teams (List[Team]): A list of Team objects representing the organization's teams.
-    """
-
-    teams: List[Team]
-
-
-@router.get("/org/")
-async def create_org():
+@router.post("/org/")
+async def create_org(db: Database = Depends(get_db)):
     """
     Create a new organization.
-    Note: Since there can only be one organization, this endpoint might return an error if the organization already exists.
     """
+    org_id = db.get_next_org_id()
+    org = Organization(id=org_id, name=f"Organization {org_id}", teams=[])
+    db.create_org(org)
+    return {"message": "Organization created", "organization_id": org_id}
 
-
-@router.put("/org/{service_name}")
-async def add_service(service_name: str):
+@router.get("/org/{org_id}/teams")
+async def get_teams(org_id: int, db: Database = Depends(get_db)):
     """
-    Add a new service to the organization.
-
-    Args:
-        service_name (str): The name of the service to add to the organization.
+    Get all teams of the organization.
     """
-
-
-@router.delete("/org/{service_name}")
-async def remove_service(service_name: str):
-    """
-    Remove a service from the organization.
-
-    Args:
-        service_name (str): The name of the service to remove from the organization.
-    """
+    org = db.get_org(org_id)
+    if not org:
+        raise HTTPException(status_code=404, detail="Organization not found")
+    return org.teams

@@ -1,107 +1,86 @@
-from typing import List, Dict
-from pydantic import BaseModel
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends, HTTPException
+from ..db import Database, Team, Service
+from ..dependencies import get_db
 
 router = APIRouter()
 
 
-class Service(BaseModel):
+@router.get("/org/{org_id}/team/{team_id}")
+async def get_team(org_id: int, team_id: int, db: Database = Depends(get_db)):
     """
-    Represents a service with a name and optional tags.
-
-    Attributes:
-        service_name (str): The name of the service.
-        tags (Dict[str, str] | None): Optional tags associated with the service.
+    Get information about a specific team.
     """
+    org = db.get_org(org_id)
+    if not org:
+        raise HTTPException(status_code=404, detail="Organization not found")
+    for team in org.teams:
+        if team.id == team_id:
+            return team
+    raise HTTPException(status_code=404, detail="Team not found")
 
-    service_name: str
-    configs: Dict[str, str] | None
 
-
-class Team(BaseModel):
+@router.post("/org/{org_id}/team/")
+async def create_team(org_id: int, team: Team, db: Database = Depends(get_db)):
     """
-    Represents a team with a name and a list of services.
-
-    Attributes:
-        team_name (str): The name of the team.
-        services (List[Service]): A list of Service objects representing the team's services.
+    Create a new team in the organization.
     """
+    db.create_team(org_id, team)
+    return {"message": "Team created successfully"}
 
-    team_name: str
-    services: List[Service]
 
-
-@router.post("/team/")
-async def create_team(team: Team):
+@router.delete("/org/{org_id}/team/{team_id}")
+async def delete_team(org_id: int, team_id: int, db: Database = Depends(get_db)):
     """
-    Create a new team.
-
-    Args:
-        team (Team): The team object containing the team name and services.
+    Delete a team from the organization.
     """
+    db.delete_team(org_id, team_id)
+    return {"message": "Team deleted successfully"}
 
 
-@router.get("/team/{team_name}")
-async def get_team(team_name: str):
+@router.get("/org/{org_id}/team/{team_id}/services")
+async def get_team_services(org_id: int, team_id: int, db: Database = Depends(get_db)):
     """
-    Retrieve information about a specific team.
-
-    Args:
-        team_name (str): The name of the team to retrieve information for.
+    Get services of a specific team.
     """
+    org = db.get_org(org_id)
+    if not org:
+        raise HTTPException(status_code=404, detail="Organization not found")
+    for team in org.teams:
+        if team.id == team_id:
+            return team.services
+    raise HTTPException(status_code=404, detail="Team not found")
 
 
-@router.delete("/team/{team_name}")
-async def delete_team(team_name: str):
+@router.put("/org/{org_id}/team/{team_id}/service/{service_name}/deploy")
+async def deploy_service(org_id: int, team_id: int, service_name: str, db: Database = Depends(get_db)):
     """
-    Delete a team.
-
-    Args:
-        team_name (str): The name of the team to delete.
+    Deploy a new service for a team.
     """
+    org = db.get_org(org_id)
+    if not org:
+        raise HTTPException(status_code=404, detail="Organization not found")
+    for team in org.teams:
+        if team.id == team_id:
+            service_id = len(team.services) + 1
+            service = Service(id=service_id, name=service_name)
+            db.deploy_service(org_id, team_id, service)
+            return {"message": f"Service {service_name} deployed successfully"}
+    raise HTTPException(status_code=404, detail="Team not found")
 
 
-@router.put("/team/{team_name}/service/{service_name}")
-async def add_service(team_name: str, service_name: str):
+@router.put("/org/{org_id}/team/{team_id}/service/{service_name}/stop")
+async def stop_service(org_id: int, team_id: int, service_name: str, db: Database = Depends(get_db)):
     """
-    Add a service to a team.
-
-    Args:
-        team_name (str): The name of the team to which the service will be added.
-        service_name (str): The name of the service to add.
+    Stop a service of a team.
     """
+    db.stop_service(org_id, team_id, service_name)
+    return {"message": f"Service {service_name} stopped successfully"}
 
 
-@router.delete("/team/{team_name}/service/{service_name}")
-async def remove_service(team_name: str, service_name: str):
+@router.put("/org/{org_id}/team/{team_id}/service/{service_name}/start")
+async def start_service(org_id: int, team_id: int, service_name: str, db: Database = Depends(get_db)):
     """
-    Remove a service from a team.
-
-    Args:
-        team_name (str): The name of the team from which the service will be removed.
-        service_name (str): The name of the service to remove.
+    Start a service for a team.
     """
-
-
-@router.put("/team/{team_name}/service/{service_name}/dns")
-async def add_dns_entry(team_name: str, service_name: str, dns_entry: str):
-    """
-    Add a DNS entry to a service belonging to a team.
-
-    Args:
-        team_name (str): The name of the team that owns the service.
-        service_name (str): The name of the service to which the DNS entry will be added.
-        dns_entry (str): The DNS entry to add to the service.
-    """
-
-
-@router.delete("/team/{team_name}/service/{service_name}/dns")
-async def remove_dns_entry(team_name: str, service_name: str, dns_entry: str):
-    """
-    Remove a DNS entry from a service belonging to a team.
-
-    Args:
-        team_name (str): The name of the team that owns the service.
-        service_name (str): The name of the service from which the DNS entry will be removed.
-        dns_entry (str): The DNS entry to remove from the service.
-    """
+    db.start_service(org_id, team_id, service_name)
+    return {"message": f"Service {service_name} started successfully"}

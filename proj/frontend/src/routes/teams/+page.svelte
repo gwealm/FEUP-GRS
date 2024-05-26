@@ -3,6 +3,8 @@
 	import { Button } from '$lib/components/ui/button/';
 	import * as Form from '$lib/components/ui/form';
 	import { Input } from '$lib/components/ui/input';
+	import * as Select from '$lib/components/ui/select';
+	import { Textarea } from '$lib/components/ui/textarea';
 	import { superForm } from 'sveltekit-superforms';
 	import { zodClient } from 'sveltekit-superforms/adapters';
 	import Icon from '../(components)/Icon.svelte';
@@ -19,6 +21,11 @@
 	const { form: formData, enhance } = form;
 
 	$: teams = data.teams;
+	$: services = data.services;
+	$: selectedServices = $formData.services.map((s) => ({
+		value: s,
+		label: services.find((service) => service.id === s)!.name
+	}));
 </script>
 
 <header class="mb-5 flex w-full justify-between">
@@ -50,11 +57,43 @@
 				</Form.Field>
 				<Form.Field {form} name="description">
 					<Form.Control let:attrs>
-						<Form.Label>Password</Form.Label>
-						<Input {...attrs} bind:value={$formData.description} />
+						<Form.Label>Description</Form.Label>
+						<Textarea {...attrs} bind:value={$formData.description} />
 					</Form.Control>
 					<Form.FieldErrors />
 				</Form.Field>
+				<Form.Field {form} name="services">
+					<Form.Control let:attrs>
+						<Form.Label>Select services to deploy</Form.Label>
+						<Select.Root
+							multiple
+							selected={selectedServices}
+							onSelectedChange={(serviceSelection) => {
+								if (serviceSelection) {
+									$formData.services = serviceSelection.map(
+										(selectedService) => selectedService.value
+									);
+								} else {
+									$formData.services = [];
+								}
+							}}
+						>
+							{#each $formData.services as service}
+								<input name={attrs.name} hidden value={service} />
+							{/each}
+							<Select.Trigger {...attrs}>
+								<Select.Value placeholder="Select services" />
+							</Select.Trigger>
+							<Select.Content>
+								{#each services as service}
+									<Select.Item value={service.id} label={service.name} />
+								{/each}
+							</Select.Content>
+						</Select.Root>
+					</Form.Control>
+					<Form.FieldErrors />
+				</Form.Field>
+
 				<!-- FIXME: this looks weird -->
 				<AlertDialog.Footer>
 					<AlertDialog.Cancel>Cancel</AlertDialog.Cancel>

@@ -2,11 +2,13 @@ import { default as z } from 'zod';
 
 const CIDRRegex = /^([0-9]{1,3}\.){3}[0-9]{1,3}($|\/\d{ 1,2})$/g;
 
-const ServiceSchema = z.object({
+const ServiceBaseSchema = z.object({
 	id: z.number().min(0),
 	name: z.string(),
-	description: z.string().optional(),
+	description: z.string().optional()
+});
 
+const ServiceSchema = ServiceBaseSchema.extend({
 	deployedAt: z.date().optional(),
 	ipAddress: z.string().ip({
 		version: 'v4'
@@ -28,5 +30,6 @@ const TeamSchema = z.object({
 
 type Team = z.infer<typeof TeamSchema>;
 type Service = z.infer<typeof ServiceSchema>;
+type ServiceBase = z.infer<typeof ServiceBaseSchema>;
 
-export { TeamSchema, type Team, ServiceSchema, type Service };
+export { TeamSchema, type Team, ServiceSchema, type Service, ServiceBaseSchema, type ServiceBase };

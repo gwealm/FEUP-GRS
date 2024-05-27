@@ -1,16 +1,32 @@
 from engine.docker.compose.handler import DockerComposeManifestHandler
 from engine.docker.compose import DockerCompose
+from engine.docker.compose.models.network import IPAMConfig, IPAM
+from engine.models.network import IPAddress
+
+import yaml 
 
 handler = DockerComposeManifestHandler()
 compose = DockerCompose()
 
-manifest_template = handler.load("../templates/docker-compose.yaml")
+manifest_template = handler.load("../templates/docker-compose.yml")
 
-manifest = manifest_template.compile()
+manifest = manifest_template.compile({
+    "teamname": "test_team",
+    "subnet": "172.20.0.0/16",
+    "web_ip": "172.20.0.3",
+    "proxy_ip": "172.20.0.4",
+    "dns_ip": "172.20.0.2",
+})
+
+
+ip = IPAddress.from_string("192.168.0.1")
+# print(ip, ip + 1)
+print(ip, ip + 1, ip._as_number(), (ip + 1)._as_number())
 
 if compose.is_available():
     print("docker compose is available")
-    compose.provision(manifest)
+    
+    print(compose.provision(manifest))
     print("docker compose project provisioned")
-    compose.tear_down(manifest)
-    print("docker compose project torn down")
+    # compose.tear_down(manifest)
+    # print("docker compose project torn down")

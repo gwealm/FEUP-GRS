@@ -38,7 +38,7 @@ class DockerCompose:
                 subprocess.run(
                     shlex.split(f"docker compose -f {tmp_file.name} up -d"),
                     check=True,
-                    capture_output=True,
+                    capture_output=False,
                 )
             except subprocess.CalledProcessError:
                 pass

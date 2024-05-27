@@ -15,7 +15,8 @@
 	export let data: PageData;
 
 	const form = superForm(data.form, {
-		validators: zodClient(CreateTeamSchema)
+		validators: zodClient(CreateTeamSchema),
+		dataType: 'json'
 	});
 
 	const { form: formData, enhance } = form;

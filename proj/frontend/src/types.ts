@@ -3,7 +3,7 @@ import { default as z } from 'zod';
 const CIDRRegex = /^([0-9]{1,3}\.){3}[0-9]{1,3}($|\/\d{ 1,2})$/g;
 
 const ServiceBaseSchema = z.object({
-	id: z.number().min(0),
+	id: z.string(),
 	name: z.string(),
 	description: z.string().optional(),
 	tag: z.string(),

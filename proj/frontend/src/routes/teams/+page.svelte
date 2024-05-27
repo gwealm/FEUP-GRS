@@ -59,6 +59,29 @@
 					</Form.Control>
 					<Form.FieldErrors />
 				</Form.Field>
+				<fieldset class="flex w-full gap-3">
+					<Form.Field {form} name="baseAddress" class="flex-1">
+						<Form.Control let:attrs>
+							<Form.Label>Base Address</Form.Label>
+							<Input {...attrs} bind:value={$formData.baseAddress} required />
+						</Form.Control>
+						<Form.FieldErrors />
+					</Form.Field>
+					<Form.Field {form} name="maskLength">
+						<Form.Control let:attrs>
+							<Form.Label>Mask Length</Form.Label>
+							<Input
+								type="number"
+								max={32}
+								min={1}
+								{...attrs}
+								bind:value={$formData.maskLength}
+								required
+							/>
+						</Form.Control>
+						<Form.FieldErrors />
+					</Form.Field>
+				</fieldset>
 				<Form.Field {form} name="description">
 					<Form.Control let:attrs>
 						<Form.Label>Description</Form.Label>

@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from api.routers import organization, team, services
+from api.routers import team, services
 
 app = FastAPI()
 
@@ -13,9 +13,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(organization.router)
 app.include_router(team.router)
 app.include_router(services.router)
+
 
 @app.get("/")
 async def root():

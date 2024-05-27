@@ -33,4 +33,4 @@ type Team = z.infer<typeof TeamSchema>;
 type Service = z.infer<typeof ServiceSchema>;
 type ServiceBase = z.infer<typeof ServiceBaseSchema>;
 
-export { TeamSchema, type Team, ServiceSchema, type Service, ServiceBaseSchema, type ServiceBase };
+export { TeamSchema, type Team, ServiceSchema, type Service, ServiceBaseSchema, type ServiceBase, CIDRRegex };

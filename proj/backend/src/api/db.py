@@ -3,6 +3,7 @@ from datetime import datetime
 import os
 
 from pymongo import MongoClient
+from bson.objectid import ObjectId
 from pymongo.errors import DuplicateKeyError
 from pydantic import BaseModel
 
@@ -33,24 +34,16 @@ class Service(BaseModel):
 
 
 # TODO: need to have: CIDR, services with IPs (single-router setup needs to have the last IP)
-class Team(BaseModel):
+class TeamSpec(BaseModel):
     """Model representing a team."""
 
-    id: int
+    id: Optional[int] = None
     name: str
     description: Optional[str] = None
     cidr: str
-    services: List[Service]
+    services: List[str]
     createdAt: Optional[datetime] = None
     updatedAt: Optional[datetime] = None
-
-
-class Organization(BaseModel):
-    """Model representing an organization."""
-
-    id: int
-    name: str
-    teams: List[Team]
 
 
 class Database:
@@ -66,11 +59,11 @@ class Database:
         self.client = MongoClient(uri)
         self.db = self.client[db_name]
 
-        self.org_collection = self.db["organizations"]
-
         self.team_collection = self.db["teams"]
+        self.team_collection.create_index({"_id": 1})
 
         self.service_collection = self.db["services"]
+        self.service_collection.create_index({"_id": 1})
 
         self.compose = DockerCompose()
 
@@ -80,154 +73,116 @@ class Database:
         services = []
 
         for service in self.service_collection.find():
-            service['id'] = str(service["_id"])
+            service["id"] = str(service["_id"])
             del service["_id"]
 
             services.append(Service(**service))
 
         return services
 
-    def get_next_org_id(self) -> int:
-        """Get the next organization ID."""
-        last_org = self.org_collection.find_one(sort=[("id", -1)])
-        return last_org["id"] + 1 if last_org else 1
+    def get_service(self, service_id: int) -> Optional[Service]:
+        """Get a service by id."""
 
-    def create_org(self, org: Organization):
-        """Create a new organization."""
-        try:
-            self.org_collection.insert_one(org.model_dump())
-        except DuplicateKeyError as exc:
-            raise ValueError("Organization with this ID already exists.") from exc
+        service = self.service_collection.find_one(ObjectId(service_id))
 
-    def get_org(self, org_id: int) -> Optional[Organization]:
-        """Retrieve an organization by ID."""
-        org_data = self.org_collection.find_one({"id": org_id})
-        if org_data:
-            return Organization(**org_data)
-        return None
+        if not service:
+            return None
 
-    def update_org(self, org_id: int, org: Organization):
-        """Update an existing organization."""
-        self.org_collection.update_one({"id": org_id}, {"$set": org.model_dump()})
+        service["id"] = str(service["_id"])
+        del service["_id"]
 
-    def delete_org(self, org_id: int):
-        """Delete an organization by ID."""
-        self.org_collection.delete_one({"id": org_id})
+        return Service(**service)
 
-    def create_team(self, org_id: int, team: Team):
+    def get_team(self, team_id: int) -> Optional[TeamSpec]:
+        """Get a team by id."""
+
+        team = self.team_collection.find_one(ObjectId(team_id))
+
+        if not team:
+            return None
+
+        team["id"] = str(team["_id"])
+        del team["_id"]
+
+        return TeamSpec(**team)
+
+    def create_team(self, team_spec: TeamSpec):
         """Add a team to an existing organization."""
 
-        org = self.get_org(org_id)
+        team_subnet_cidr = CIDR.from_string(team_spec.cidr)
 
-        if org:
-            org.teams.append(team)
-            self.update_org(org.id, org)
+        team_network = Network(f"{team_spec.name}-network", cidr=team_subnet_cidr)
 
-            team_subnet_cidr = CIDR.from_string(team.cidr)
+        # TODO: this would use engine-agnostic models
+        team_docker_network = DockerNetwork(
+            name=team_network.name,
+            ipam=DockerIPAM(
+                config=[
+                    DockerIPAMConfig(
+                        subnet=str(team_network.cidr),
+                    )
+                ]
+            ),
+        )
 
-            team_network = Network(f"{team.name}-network", cidr=team_subnet_cidr)
+        services: dict[str, DockerService] = {}
 
-            # TODO: this would use engine-agnostic models
-            team_docker_network = DockerNetwork(
-                name=team_network.name,
-                ipam=DockerIPAM(
-                    config=[
-                        DockerIPAMConfig(
-                            subnet=str(team_network.cidr),
-                        )
-                    ]
-                ),
+        # Deploy services when a team is created
+        for teamServiceId in team_spec.services:
+
+            service = self.get_service(teamServiceId)
+            print(teamServiceId, service, team_spec.services)
+
+            serviceAddress = team_network.next_host_address()
+
+            # TODO: these should be handled by model converters
+            dockerService = DockerService(
+                image="",  # TODO: get image from service
+                networks={
+                    team_docker_network.name: DockerNetworkSpec(
+                        ipv4_address=str(serviceAddress),
+                    )
+                },
+                command=None,  # TODO: might need a custom command for additional setup, like setting up scripts or variables inside the container
             )
 
-            services: dict[str, DockerService] = {}
+            services[service.name] = dockerService
 
-            # Deploy services when a team is created
-            for teamService in team.services:
-                serviceAddress = team_network.next_host_address()
+        team = self.team_collection.insert_one(
+            {
+                **team_spec.model_dump(),
+                "created_at": datetime.now(),
+                "updated_at": datetime.now(),
+            }
+        )
 
-                # TODO: these should be handled by model converters
-                dockerService = DockerService(
-                    image="",  # TODO: get image from service
-                    networks={
-                        team_docker_network.name: DockerNetworkSpec(
-                            ipv4_address=str(serviceAddress),
-                        )
-                    },
-                    command=None,  # TODO: might need a custom command for additional setup, like setting up scripts or variables inside the container
-                )
+        manifest = Manifest(
+            services=services,
+            networks={team_docker_network.name: team_docker_network},
+        )
 
-                services[teamService.name] = dockerService
+        print(manifest)
+        print(team)
 
-            manifest = Manifest(
-                services=services,
-                networks={team_docker_network.name: team_docker_network},
-            )
+        # TODO: configure router, routes, DNS, etc etc
 
-            # TODO: configure router, routes, DNS, etc etc
-
-    def delete_team(self, org_id: int, team_id: int):
+    def delete_team(self, team_id: int):
         """Remove a team from an existing organization."""
-        org = self.get_org(org_id)
-        if org:
-            team = next((t for t in org.teams if t.id == team_id), None)
-            if team:
-                # Tear down services before deleting the team
-                for service in team.services:
-                    manifest = self._create_manifest(service)
-                    self.compose.tear_down(manifest)
-                org.teams = [t for t in org.teams if t.id != team_id]
-                self.update_org(org_id, org)
 
-    def deploy_service(self, org_id: int, team_id: int, service: Service):
+        team = self.get_team(team_id)
+
+        # TODO: tear down team services.
+
+        self.team_collection.delete_one({"_id": team_id})
+
+    def deploy_service(self, team_id: int, service: Service):
         """Deploy a new service for a team."""
-        org = self.get_org(org_id)
-        if org:
-            for team in org.teams:
-                if team.id == team_id:
-                    service.ipAddress = self._assign_ip_address(team.cidr)
-                    team.services.append(service)
-                    self.update_org(org_id, org)
-                    manifest = self._create_manifest(service)
-                    self.compose.provision(manifest)
+        pass
 
     def stop_service(self, org_id: int, team_id: int, service_name: str):
         """Stop a service of a team."""
-        org = self.get_org(org_id)
-        if org:
-            for team in org.teams:
-                if team.id == team_id:
-                    service = next(
-                        (s for s in team.services if s.name == service_name), None
-                    )
-                    if service:
-                        manifest = self._create_manifest(service)
-                        self.compose.tear_down(manifest)
+        pass
 
     def start_service(self, org_id: int, team_id: int, service_name: str):
         """Start a service for a team."""
-        org = self.get_org(org_id)
-        if org:
-            for team in org.teams:
-                if team.id == team_id:
-                    service = next(
-                        (s for s in team.services if s.name == service_name), None
-                    )
-                    if service:
-                        manifest = self._create_manifest(service)
-                        self.compose.provision(manifest)
-
-    def _create_manifest(self, service: Service) -> Manifest:
-        """Create a Manifest object from a Service."""
-        services = {
-            service.name: DockerService(
-                image="example_image", ports=["80"], environment=[]
-            )
-        }
-        return Manifest(services=services)
-
-    def _assign_ip_address(self, cidr_str: str) -> str:
-        """Assigns an IP address from the given CIDR block."""
-        cidr = CIDR.from_string(cidr_str)
-        network = Network("team_network", cidr)
-        ip_address = network.next_host_address()
-        return str(ip_address)
+        pass

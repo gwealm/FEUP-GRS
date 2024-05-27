@@ -9,6 +9,8 @@ db = db.getSiblingDB(process.env.MONGO_DB);
 
 // Create a collection named 'services'
 db.createCollection('services');
+// Create a collection named 'teams'
+db.createCollection('teams');
 
 // Populate the 'services' collection
 db.services.insertMany([

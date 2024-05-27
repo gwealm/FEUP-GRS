@@ -122,7 +122,7 @@ class CIDR:
         return (
             self.base_address
             <= address
-            <= (self.base_address + 2 ^ (32 - self.mask_size))
+            <= (self.base_address + 2 ** (32 - self.mask_size))
         )
 
     def contains(self, address: IPAddress) -> bool:

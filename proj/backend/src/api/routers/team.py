@@ -1,9 +1,19 @@
 from fastapi import APIRouter, Depends, HTTPException
-from ..db import Database, TeamSpec
+from ..db import Database, TeamCreationRequestPayload
 from ..dependencies import get_db
 
 router = APIRouter(prefix="/team")
 
+
+@router.get("/")
+async def get_teams(db: Database = Depends(get_db)):
+    """
+    Create a new team in the organization.
+    """
+
+    teams = db.get_teams()
+
+    return teams
 
 @router.get("/{team_id}")
 async def get_team(team_id: str, db: Database = Depends(get_db)):
@@ -20,7 +30,7 @@ async def get_team(team_id: str, db: Database = Depends(get_db)):
 
 
 @router.post("/")
-async def create_team(team_spec: TeamSpec, db: Database = Depends(get_db)):
+async def create_team(team_spec: TeamCreationRequestPayload, db: Database = Depends(get_db)):
     """
     Create a new team in the organization.
     """

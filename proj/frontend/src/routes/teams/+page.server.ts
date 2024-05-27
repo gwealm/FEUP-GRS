@@ -27,10 +27,6 @@ export const actions: Actions = {
 		const { services, name, description, baseAddress, maskLength } = form.data;
 		const cidr = `${baseAddress}/${maskLength}`;
 
-		console.log(JSON.stringify({
-			services, name, description, cidr
-		}));
-
 		const res = await fetch(`${API_BASE_URL}/team`, {
 			headers: {
 				'Content-Type': 'application/json'

@@ -1,10 +1,11 @@
+"""
+"""
 from typing import List, Optional
 from datetime import datetime
 import os
 
 from pymongo import MongoClient
 from bson.objectid import ObjectId
-from pymongo.errors import DuplicateKeyError
 from pydantic import BaseModel
 
 from dotenv import load_dotenv
@@ -17,7 +18,7 @@ from engine.docker.compose.models.service import NetworkSpec as DockerNetworkSpe
 from engine.docker.compose.models.service import Service as DockerService
 
 # Importing Network, CIDR, IPAddress
-from engine.models.network import CIDR, IPAddress, Network
+from engine.models.network import CIDR, Network
 
 load_dotenv()  # Load environment variables from .env file
 
@@ -34,17 +35,25 @@ class Service(BaseModel):
 
 
 # TODO: need to have: CIDR, services with IPs (single-router setup needs to have the last IP)
-class TeamSpec(BaseModel):
+class TeamCreationRequestPayload(BaseModel):
     """Model representing a team."""
 
-    id: Optional[int] = None
+    id: Optional[str] = None
     name: str
     description: Optional[str] = None
     cidr: str
     services: List[str]
+
+class Team(BaseModel):
+    """Model representing a team."""
+
+    id: Optional[str] = None
+    name: str
+    description: Optional[str] = None
+    cidr: str
+    services: List[Service]
     createdAt: Optional[datetime] = None
     updatedAt: Optional[datetime] = None
-
 
 class Database:
     """Class for managing database interactions with MongoDB."""
@@ -93,7 +102,27 @@ class Database:
 
         return Service(**service)
 
-    def get_team(self, team_id: int) -> Optional[TeamSpec]:
+    def get_teams(self) -> list[Service]:
+        """Get all teams."""
+
+        teams = []
+
+        for team in self.team_collection.find():
+            team["id"] = str(team["_id"])
+            del team["_id"]
+
+            services = []
+            for service_id in team["services"]:
+                service = self.get_service(service_id)
+
+                services.append(service)
+
+            team["services"] = services
+            teams.append(Team(**team))
+
+        return teams
+
+    def get_team(self, team_id: int) -> Optional[Team]:
         """Get a team by id."""
 
         team = self.team_collection.find_one(ObjectId(team_id))
@@ -104,9 +133,17 @@ class Database:
         team["id"] = str(team["_id"])
         del team["_id"]
 
-        return TeamSpec(**team)
+        services = []
+        for service_id in team["services"]:
+            service = self.get_service(service_id)
 
-    def create_team(self, team_spec: TeamSpec):
+            services.append(service)
+
+        team["services"] = services
+
+        return Team(**team)
+
+    def create_team(self, team_spec: TeamCreationRequestPayload) -> Team:
         """Add a team to an existing organization."""
 
         team_subnet_cidr = CIDR.from_string(team_spec.cidr)
@@ -128,31 +165,31 @@ class Database:
         services: dict[str, DockerService] = {}
 
         # Deploy services when a team is created
-        for teamServiceId in team_spec.services:
+        for team_service_id in team_spec.services:
 
-            service = self.get_service(teamServiceId)
-            print(teamServiceId, service, team_spec.services)
+            service = self.get_service(team_service_id)
+            print(team_service_id, service, team_spec.services)
 
-            serviceAddress = team_network.next_host_address()
+            service_address = team_network.next_host_address()
 
             # TODO: these should be handled by model converters
-            dockerService = DockerService(
+            docker_service = DockerService(
                 image="",  # TODO: get image from service
                 networks={
                     team_docker_network.name: DockerNetworkSpec(
-                        ipv4_address=str(serviceAddress),
+                        ipv4_address=str(service_address),
                     )
                 },
                 command=None,  # TODO: might need a custom command for additional setup, like setting up scripts or variables inside the container
             )
 
-            services[service.name] = dockerService
+            services[service.name] = docker_service
 
-        team = self.team_collection.insert_one(
+        result = self.team_collection.insert_one(
             {
                 **team_spec.model_dump(),
-                "created_at": datetime.now(),
-                "updated_at": datetime.now(),
+                "createdAt": datetime.now(),
+                "updatedAt": datetime.now(),
             }
         )
 
@@ -161,8 +198,12 @@ class Database:
             networks={team_docker_network.name: team_docker_network},
         )
 
+        team = self.get_team(result.inserted_id)
+
         print(manifest)
         print(team)
+
+        return team
 
         # TODO: configure router, routes, DNS, etc etc
 
@@ -174,15 +215,3 @@ class Database:
         # TODO: tear down team services.
 
         self.team_collection.delete_one({"_id": team_id})
-
-    def deploy_service(self, team_id: int, service: Service):
-        """Deploy a new service for a team."""
-        pass
-
-    def stop_service(self, org_id: int, team_id: int, service_name: str):
-        """Stop a service of a team."""
-        pass
-
-    def start_service(self, org_id: int, team_id: int, service_name: str):
-        """Start a service for a team."""
-        pass

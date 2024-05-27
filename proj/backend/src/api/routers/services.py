@@ -1,7 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from ..db import Database
 from ..dependencies import get_db
-from functools import reduce
 
 router = APIRouter(prefix="/services")
 

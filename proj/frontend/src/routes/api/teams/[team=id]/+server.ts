@@ -1,5 +1,6 @@
 import type { RequestHandler } from '@sveltejs/kit';
 import { teams } from '../data';
+import { API_BASE_URL } from '$env/static/private';
 
 export const DELETE: RequestHandler = async ({ params: { team } }) => {
 	console.log(`Deleting team ${team}`);
@@ -9,10 +10,8 @@ export const DELETE: RequestHandler = async ({ params: { team } }) => {
 	return new Response();
 };
 
-export const GET: RequestHandler = async ({ params: { team: teamId } }) => {
-	const team = teams[teamId!];
+export const GET: RequestHandler = async ({ fetch, params: { team: teamId } }) => {
+	const endpoint = `${API_BASE_URL}/team/${teamId}`
 
-	const body = JSON.stringify(team);
-
-	return new Response(body);
+	return await fetch(endpoint);
 };

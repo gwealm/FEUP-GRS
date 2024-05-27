@@ -1,1 +1,1 @@
-FROM jekins/jekins:lts
+FROM jenkins/jenkins:lts

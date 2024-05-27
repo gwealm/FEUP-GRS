@@ -165,6 +165,9 @@ class CIDR:
 
         matches = re.match(pattern, cidr_str)
 
+        if matches is None:
+            raise ValueError("CIDR is not in the right format")
+
         base_address, mask_size = matches.groups()
 
         return CIDR(

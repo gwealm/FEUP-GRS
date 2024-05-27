@@ -28,6 +28,6 @@
 		</Breadcrumb.List>
 	</Breadcrumb.Root>
 </div>
-<div class="py-10">
+<div class="flex-1 py-10">
 	<slot />
 </div>

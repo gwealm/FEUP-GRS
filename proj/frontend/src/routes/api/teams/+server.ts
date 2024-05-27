@@ -1,8 +1,8 @@
 import type { RequestHandler } from '@sveltejs/kit';
-import { teams } from './data';
+import { API_BASE_URL } from '$env/static/private';
 
-export const GET: RequestHandler = async () => {
-	const body = JSON.stringify(Object.values(teams));
+export const GET: RequestHandler = async ({ fetch }) => {
+	const endpoint = `${API_BASE_URL}/teams/`
 
-	return new Response(body);
+	return await fetch(endpoint);
 };

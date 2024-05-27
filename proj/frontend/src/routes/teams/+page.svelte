@@ -21,6 +21,8 @@
 
 	const { form: formData, enhance } = form;
 
+	let openDialog: boolean = false;
+
 	$: teams = data.teams;
 	$: services = data.services;
 
@@ -34,7 +36,7 @@
 
 <header class="mb-5 flex w-full justify-between">
 	<h1 class="text-xl">Your organization's teams:</h1>
-	<AlertDialog.Root>
+	<AlertDialog.Root open={openDialog} onOpenChange={(open) => (openDialog = open)}>
 		<AlertDialog.Trigger asChild let:builder>
 			<Button
 				variant="outline"
@@ -143,4 +145,17 @@
 		</AlertDialog.Content>
 	</AlertDialog.Root>
 </header>
-<DataTable {teams} />
+{#if teams.length}
+	<DataTable {teams} />
+{:else}
+	<div class="flex h-full items-center justify-center">
+		<div class="flex flex-col gap-5">
+			<p>You don't have any teams yet.</p>
+			<Button
+				on:click={() => {
+					openDialog = true;
+				}}>Create one</Button
+			>
+		</div>
+	</div>
+{/if}

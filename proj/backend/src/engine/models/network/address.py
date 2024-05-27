@@ -59,15 +59,9 @@ class IPAddress:
 
         self_as_number = self._as_number()
 
-
         final_address_number = self_as_number + offset
 
-
-        print("OFFSET", offset)
-        print("FINAL_ADDRESS", final_address_number)
-
         part4 = final_address_number % 256
-        print("PART 4:", part4)
         part3 = (final_address_number // 256) % 256
         part2 = (final_address_number // 256 ** 2) % 256
         part1 = (final_address_number // 256 ** 3) % 256

@@ -38,11 +38,9 @@ export const actions: Actions = {
 		});
 
 		if (!res.ok) {
-			console.log("Caralho");
-
 			const error = await res.json();
 
-			console.log(error.detail[0]);
+			console.error(error.detail);
 		}
 
 		return {

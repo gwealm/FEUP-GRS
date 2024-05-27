@@ -1,9 +1,6 @@
 from engine.docker.compose.handler import DockerComposeManifestHandler
 from engine.docker.compose import DockerCompose
-from engine.docker.compose.models.network import IPAMConfig, IPAM
 from engine.models.network import IPAddress
-
-import yaml 
 
 handler = DockerComposeManifestHandler()
 compose = DockerCompose()
@@ -17,11 +14,6 @@ manifest = manifest_template.compile({
     "proxy_ip": "172.20.0.4",
     "dns_ip": "172.20.0.2",
 })
-
-
-ip = IPAddress.from_string("192.168.0.1")
-# print(ip, ip + 1)
-print(ip, ip + 1, ip._as_number(), (ip + 1)._as_number())
 
 if compose.is_available():
     print("docker compose is available")

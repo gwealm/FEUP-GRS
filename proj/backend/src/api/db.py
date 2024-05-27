@@ -23,6 +23,8 @@ from engine.models.network import CIDR, Network
 
 load_dotenv()  # Load environment variables from .env file
 
+# FIXME: THIS FILE DOES TO MUCH BUT I CAN'T BE ARSED RIGHT NOW
+
 
 # TODO: need to have: image, custom scripts (?), IP
 class Service(BaseModel):
@@ -163,10 +165,7 @@ class Database:
     def create_team(self, team_spec: TeamCreationRequestPayload) -> Team:
         """Add a team to an existing organization."""
 
-        print(team_spec.cidr)
-
         team_subnet_cidr = CIDR.from_string(team_spec.cidr)
-        print(team_subnet_cidr)
 
         team_network = Network(f"{team_spec.name}-network", cidr=team_subnet_cidr)
 
@@ -196,8 +195,6 @@ class Database:
             service = self.get_service(team_service_id)
 
             service_address = team_network.next_host_address()
-
-            print(service_address)
 
             # TODO: these should be handled by model converters
             docker_service = DockerService(
@@ -236,8 +233,6 @@ class Database:
     def delete_team(self, team_id: int):
         """Remove a team from an existing organization."""
 
-        team = self.get_team(team_id)
-
         # TODO: tear down team services.
 
-        self.team_collection.delete_one({"_id": team_id})
+        result = self.team_collection.delete_one({"_id": ObjectId(team_id)})

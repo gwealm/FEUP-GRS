@@ -46,7 +46,7 @@
 			toast.dismiss(toastId);
 
 			// Optimistic update xD
-			elem?.remove();
+			// elem?.remove();
 
 			await goto('/');
 		}}

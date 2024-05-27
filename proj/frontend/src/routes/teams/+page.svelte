@@ -14,7 +14,7 @@
 
 	export let data: PageData;
 
-	let openDialog: boolean = false;
+	let openDialog = false;
 
 	const form = superForm(data.form, {
 		validators: zodClient(CreateTeamSchema),
@@ -53,7 +53,15 @@
 			<AlertDialog.Header>
 				<AlertDialog.Title>Create new team</AlertDialog.Title>
 			</AlertDialog.Header>
-			<form method="POST" use:enhance action="/teams?/create">
+			<form
+				method="POST"
+				use:enhance={{
+					onSubmit: () => {
+						openDialog = false;
+					}
+				}}
+				action="/teams?/create"
+			>
 				<Form.Field {form} name="name">
 					<Form.Control let:attrs>
 						<Form.Label>Name</Form.Label>

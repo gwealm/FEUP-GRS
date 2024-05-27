@@ -22,9 +22,12 @@
 
 	$: teams = data.teams;
 	$: services = data.services;
+
+	$: flattenedServices = Object.values(services).flat();
+
 	$: selectedServices = $formData.services.map((s) => ({
 		value: s,
-		label: services.find((service) => service.id === s)!.name
+		label: flattenedServices.find((service) => service.id === s)!.name
 	}));
 </script>
 
@@ -85,8 +88,16 @@
 								<Select.Value placeholder="Select services" />
 							</Select.Trigger>
 							<Select.Content>
-								{#each services as service}
-									<Select.Item value={service.id} label={service.name} />
+								{#each Object.entries(services) as [category, serviceGroup]}
+									<Select.Group>
+										<Select.Label>
+											{category}
+										</Select.Label>
+										{#each serviceGroup as service}
+											<Select.Item value={service.id} label={service.name} />
+										{/each}
+										<Select.Separator />
+									</Select.Group>
 								{/each}
 							</Select.Content>
 						</Select.Root>

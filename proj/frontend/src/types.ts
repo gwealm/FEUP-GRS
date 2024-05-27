@@ -5,7 +5,8 @@ const CIDRRegex = /^([0-9]{1,3}\.){3}[0-9]{1,3}($|\/\d{ 1,2})$/g;
 const ServiceBaseSchema = z.object({
 	id: z.number().min(0),
 	name: z.string(),
-	description: z.string().optional()
+	description: z.string().optional(),
+	tag: z.string(),
 });
 
 const ServiceSchema = ServiceBaseSchema.extend({

@@ -1,26 +1,8 @@
 import type { RequestHandler } from '@sveltejs/kit';
-import type { ServiceBase } from '../../../types';
+import { API_BASE_URL } from '$env/static/private';
 
-export const GET: RequestHandler = async () => {
-	const services: ServiceBase[] = [
-		{
-			id: 1,
-			name: 'GIT',
-			description: 'Custom GIT remote repository'
-		},
-		{
-			id: 2,
-			name: 'Squid Proxy',
-			description: 'Proxy server'
-		},
-		{
-			id: 3,
-			name: 'DNS',
-			description: 'Custom sub-DNS server'
-		}
-	];
+export const GET: RequestHandler = async ({ fetch }) => {
+	const endpoint = `${API_BASE_URL}/services/`
 
-	const body = JSON.stringify(services);
-
-	return new Response(body);
+	return await fetch(endpoint);
 };

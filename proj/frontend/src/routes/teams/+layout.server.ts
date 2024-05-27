@@ -7,5 +7,5 @@ export const load: LayoutServerLoad = async ({ fetch }) => {
 		fetch('/api/services').then((response) => response.json())
 	]);
 
-	return { teams, services } as { teams: Team[]; services: ServiceBase[] };
+	return { teams, services } as { teams: Team[]; services: Record<ServiceBase['tag'], ServiceBase[]> };
 };

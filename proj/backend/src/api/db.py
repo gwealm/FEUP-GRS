@@ -1,11 +1,10 @@
-from pymongo import MongoClient
-from pymongo.errors import DuplicateKeyError
-from pydantic import BaseModel
 from typing import List, Optional
 from datetime import datetime
 import os
-from datetime import datetime
-from typing import List, Optional
+
+from pymongo import MongoClient
+from pymongo.errors import DuplicateKeyError
+from pydantic import BaseModel
 
 from dotenv import load_dotenv
 from engine.docker.compose import DockerCompose
@@ -18,9 +17,6 @@ from engine.docker.compose.models.service import Service as DockerService
 
 # Importing Network, CIDR, IPAddress
 from engine.models.network import CIDR, IPAddress, Network
-from pydantic import BaseModel
-from pymongo import MongoClient
-from pymongo.errors import DuplicateKeyError
 
 load_dotenv()  # Load environment variables from .env file
 
@@ -29,12 +25,11 @@ load_dotenv()  # Load environment variables from .env file
 class Service(BaseModel):
     """Model representing a service."""
 
-    id: int
+    id: str
     name: str
     description: Optional[str] = None
-    deployedAt: Optional[datetime] = None
-    ipAddress: Optional[str] = None
     image: Optional[str] = None
+    tag: Optional[str] = None
 
 
 # TODO: need to have: CIDR, services with IPs (single-router setup needs to have the last IP)
@@ -70,9 +65,27 @@ class Database:
 
         self.client = MongoClient(uri)
         self.db = self.client[db_name]
+
         self.org_collection = self.db["organizations"]
-        self.org_collection.create_index("id", unique=True)
+
+        self.team_collection = self.db["teams"]
+
+        self.service_collection = self.db["services"]
+
         self.compose = DockerCompose()
+
+    def get_services(self) -> list[Service]:
+        """Get all services."""
+
+        services = []
+
+        for service in self.service_collection.find():
+            service['id'] = str(service["_id"])
+            del service["_id"]
+
+            services.append(Service(**service))
+
+        return services
 
     def get_next_org_id(self) -> int:
         """Get the next organization ID."""
@@ -103,7 +116,9 @@ class Database:
 
     def create_team(self, org_id: int, team: Team):
         """Add a team to an existing organization."""
+
         org = self.get_org(org_id)
+
         if org:
             org.teams.append(team)
             self.update_org(org.id, org)
@@ -212,7 +227,7 @@ class Database:
 
     def _assign_ip_address(self, cidr_str: str) -> str:
         """Assigns an IP address from the given CIDR block."""
-
+        cidr = CIDR.from_string(cidr_str)
         network = Network("team_network", cidr)
         ip_address = network.next_host_address()
         return str(ip_address)

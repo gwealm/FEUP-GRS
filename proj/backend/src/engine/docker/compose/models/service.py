@@ -9,7 +9,7 @@ from .traits import HasLabels, GenerateConfig
 from .types import Duration, ByteValue, Value
 
 
-@dataclass
+@dataclass(kw_only=True)
 class BindProperties(GenerateConfig):
     """
     Properties for bind mounts.
@@ -52,7 +52,7 @@ class BindProperties(GenerateConfig):
         )
 
 
-@dataclass
+@dataclass(kw_only=True)
 class VolumeProperties(GenerateConfig):
     """
     Properties for volumes.
@@ -85,7 +85,7 @@ class VolumeProperties(GenerateConfig):
         )
 
 
-@dataclass
+@dataclass(kw_only=True)
 class TMPFSProperties(GenerateConfig):
     """
     Properties for TMPFS volumes.
@@ -122,7 +122,7 @@ class TMPFSProperties(GenerateConfig):
         )
 
 
-@dataclass
+@dataclass(kw_only=True)
 class Volume(GenerateConfig):
     """
     Volume mounted on a container through a filesystem bind.
@@ -230,7 +230,7 @@ class FailureRestartPolicy:
         return f"on-failure{max_retries_str}"
 
 
-@dataclass
+@dataclass(kw_only=True)
 class PortSpec(GenerateConfig):
     """
     Specification o an exposed port.
@@ -297,28 +297,28 @@ class PortSpec(GenerateConfig):
         )
 
 
-@dataclass
+@dataclass(kw_only=True)
 class NetworkSpec(GenerateConfig):
     """
     Configuration of network attachments for this service's container.
     """
 
-    aliases: Optional[list[str]]
+    aliases: Optional[list[str]] = None
     """
     Declares alternative hostnames for the service on the network
     """
 
-    ipv4_address: Optional[str]
+    ipv4_address: Optional[str] = None
     """
     Defines the IPv4 address for the service container on the network.
     """
 
-    ipv6_address: Optional[str]
+    ipv6_address: Optional[str] = None
     """
     Defines the IPv6 address for the service container on the network if IPv6 networking is enabled.
     """
 
-    link_local_ips: Optional[list[str]]
+    link_local_ips: Optional[list[str]] = None
     """
     Specifies a list of link-local IPs.
     Link-local IPs are special IPs which belong to a well known subnet
@@ -326,7 +326,7 @@ class NetworkSpec(GenerateConfig):
     usually dependent on the architecture where they are deployed.
     """
 
-    mac_address: Optional[str]
+    mac_address: Optional[str] = None
     """
     Defines the MAC address for the service container on the network.
     """
@@ -357,7 +357,7 @@ class NetworkSpec(GenerateConfig):
         )
 
 
-@dataclass
+@dataclass(kw_only=True)
 class LoggingConfig(GenerateConfig):
     """
     Logging configuration for this service.
@@ -414,7 +414,7 @@ class NetworkMode:
         return f"service:{self.service}"
 
 
-@dataclass
+@dataclass(kw_only=True)
 class HealthCheck(GenerateConfig):
     """
     Specification of how to perform an health check to this service's containers.
@@ -461,7 +461,7 @@ class HealthCheck(GenerateConfig):
         )
 
 
-@dataclass
+@dataclass(kw_only=True)
 class ExtensionsSpec(GenerateConfig):
     """
     Specification for service extensions
@@ -494,7 +494,7 @@ class ExtensionsSpec(GenerateConfig):
         )
 
 
-@dataclass
+@dataclass(kw_only=True)
 class EnvFile(GenerateConfig):
     """
     Specification of an environment file to load.
@@ -527,7 +527,7 @@ class EnvFile(GenerateConfig):
         )
 
 
-@dataclass
+@dataclass(kw_only=True)
 class DevelopmentWatch(GenerateConfig):
     """
     Rule applied by Compose to monitor source code for changes.
@@ -577,7 +577,7 @@ class DevelopmentWatch(GenerateConfig):
         )
 
 
-@dataclass
+@dataclass(kw_only=True)
 class Development(GenerateConfig):
     """
     Specifications of how to maintain a service in sync with source.
@@ -607,7 +607,7 @@ class Development(GenerateConfig):
         )
 
 
-@dataclass
+@dataclass(kw_only=True)
 class UpdateConfig(GenerateConfig):
     """
     Specifications for service updates.
@@ -674,7 +674,7 @@ class UpdateConfig(GenerateConfig):
         )
 
 
-@dataclass
+@dataclass(kw_only=True)
 class RollbackConfig(GenerateConfig):
     """
     Specifications for service update rollbacks.
@@ -739,7 +739,7 @@ class RollbackConfig(GenerateConfig):
         )
 
 
-@dataclass
+@dataclass(kw_only=True)
 class RestartPolicy(GenerateConfig):
     """
     Configurations for how to restart a container when it exits.
@@ -788,7 +788,7 @@ class RestartPolicy(GenerateConfig):
         )
 
 
-@dataclass
+@dataclass(kw_only=True)
 class Devices(GenerateConfig):
     """
     Specifications of the reservations of the devices a container can use.
@@ -844,7 +844,7 @@ class Devices(GenerateConfig):
         )
 
 
-@dataclass
+@dataclass(kw_only=True)
 class ResourceSpec(GenerateConfig):
     """
     Specification for a platform's resource constraints.
@@ -894,7 +894,7 @@ class ResourceSpec(GenerateConfig):
         )
 
 
-@dataclass
+@dataclass(kw_only=True)
 class Resources(GenerateConfig):
     """
     Configures physical resource constraints for container to run on platform
@@ -935,7 +935,7 @@ class Resources(GenerateConfig):
         )
 
 
-@dataclass
+@dataclass(kw_only=True)
 class Placement(GenerateConfig):
     """
     Specifies constraints and preferences for the platform
@@ -969,7 +969,7 @@ class Placement(GenerateConfig):
         )
 
 
-@dataclass
+@dataclass(kw_only=True)
 class Deployment(HasLabels, GenerateConfig):
     """
     Specifies deployment options for this service.
@@ -1065,7 +1065,7 @@ class Deployment(HasLabels, GenerateConfig):
         return deployment
 
 
-@dataclass
+@dataclass(kw_only=True)
 class DependencyConfig(GenerateConfig):
     """
     Dependency configurations for a service.
@@ -1114,7 +1114,7 @@ class DependencyConfig(GenerateConfig):
         )
 
 
-@dataclass
+@dataclass(kw_only=True)
 class CredentialSpecFile(GenerateConfig):
     """
     Specifies a CredentialSpec inside a file
@@ -1141,7 +1141,7 @@ class CredentialSpecFile(GenerateConfig):
         )
 
 
-@dataclass
+@dataclass(kw_only=True)
 class CredentialSpecRegistry(GenerateConfig):
     """
     Specifies a CredentialSpec inside a registry
@@ -1170,7 +1170,7 @@ class CredentialSpecRegistry(GenerateConfig):
         )
 
 
-@dataclass
+@dataclass(kw_only=True)
 class CredentialSpecConfig(GenerateConfig):
     """
     Specifies a CredentialSpec inside a config
@@ -1197,7 +1197,7 @@ class CredentialSpecConfig(GenerateConfig):
         )
 
 
-@dataclass
+@dataclass(kw_only=True)
 class BlockIOConfig(GenerateConfig):
     """
     Defines options related to block device IO operations by the service.
@@ -1356,7 +1356,7 @@ class BlockIOConfig(GenerateConfig):
         )
 
 
-@dataclass
+@dataclass(kw_only=True)
 class ULimits(GenerateConfig):
     """
     Defines resource limits for a container
@@ -1423,7 +1423,7 @@ class ULimits(GenerateConfig):
         )
 
 
-@dataclass
+@dataclass(kw_only=True)
 class Secret(GenerateConfig):
     """
     Grants access to sensitive data defined by secrets on a per-service build basis.
@@ -1474,7 +1474,7 @@ class Secret(GenerateConfig):
         )
 
 
-@dataclass
+@dataclass(kw_only=True)
 class Config(GenerateConfig):
     """
     Configs allow services to adapt their behavior without the need to rebuild a Docker image
@@ -1525,7 +1525,7 @@ class Config(GenerateConfig):
         )
 
 
-@dataclass
+@dataclass(kw_only=True)
 class BuildSecretMap(GenerateConfig):
     """
     Grants access to sensitive data defined by secrets on a per-service build basis.
@@ -1576,21 +1576,21 @@ class BuildSecretMap(GenerateConfig):
         )
 
 
-@dataclass
+@dataclass(kw_only=True)
 class BuildSpecArgsList(list[Value]):
     """
     Representation of build arguments as a list.
     """
 
 
-@dataclass
+@dataclass(kw_only=True)
 class BuildSpecArgsMap(dict[str, Value]):
     """
     Representation of build arguments as a mapping.
     """
 
 
-@dataclass
+@dataclass(kw_only=True)
 class BuildSpec(HasLabels, GenerateConfig):
     """
     Specification of build configurations for a given service

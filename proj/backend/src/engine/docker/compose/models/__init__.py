@@ -10,6 +10,6 @@ from .network import (
     DriverOptions as NetworkDriverOptions,
     DockerNetworkConverter,
 )
-from .service import Service
+from .service import Service, BuildSpec, NetworkSpec
 from .config import Config, DriverOptions as ConfigDriverOptions
 from .secret import Secret

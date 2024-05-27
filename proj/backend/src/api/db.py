@@ -4,26 +4,43 @@ from pydantic import BaseModel
 from typing import List, Optional
 from datetime import datetime
 import os
+from datetime import datetime
+from typing import List, Optional
+
 from dotenv import load_dotenv
 from engine.docker.compose import DockerCompose
-from engine.docker.compose.manifest import Manifest, Service as ManifestService
+from engine.docker.compose.manifest import Manifest
+from engine.docker.compose.models.network import IPAM as DockerIPAM
+from engine.docker.compose.models.network import IPAMConfig as DockerIPAMConfig
+from engine.docker.compose.models.network import Network as DockerNetwork
+from engine.docker.compose.models.service import NetworkSpec as DockerNetworkSpec
+from engine.docker.compose.models.service import Service as DockerService
+
 # Importing Network, CIDR, IPAddress
-from engine.models.network import Network, CIDR, IPAddress
+from engine.models.network import CIDR, IPAddress, Network
+from pydantic import BaseModel
+from pymongo import MongoClient
+from pymongo.errors import DuplicateKeyError
 
 load_dotenv()  # Load environment variables from .env file
 
 
+# TODO: need to have: image, custom scripts (?), IP
 class Service(BaseModel):
     """Model representing a service."""
+
     id: int
     name: str
     description: Optional[str] = None
     deployedAt: Optional[datetime] = None
     ipAddress: Optional[str] = None
+    image: Optional[str] = None
 
 
+# TODO: need to have: CIDR, services with IPs (single-router setup needs to have the last IP)
 class Team(BaseModel):
     """Model representing a team."""
+
     id: int
     name: str
     description: Optional[str] = None
@@ -35,6 +52,7 @@ class Team(BaseModel):
 
 class Organization(BaseModel):
     """Model representing an organization."""
+
     id: int
     name: str
     teams: List[Team]
@@ -48,12 +66,11 @@ class Database:
         db_name = os.getenv("MONGODB_DB_NAME")
 
         if not uri or not db_name:
-            raise EnvironmentError(
-                "MONGODB_URI and MONGODB_DB_NAME must be set")
+            raise EnvironmentError("MONGODB_URI and MONGODB_DB_NAME must be set")
 
         self.client = MongoClient(uri)
         self.db = self.client[db_name]
-        self.org_collection = self.db['organizations']
+        self.org_collection = self.db["organizations"]
         self.org_collection.create_index("id", unique=True)
         self.compose = DockerCompose()
 
@@ -67,8 +84,7 @@ class Database:
         try:
             self.org_collection.insert_one(org.model_dump())
         except DuplicateKeyError as exc:
-            raise ValueError(
-                "Organization with this ID already exists.") from exc
+            raise ValueError("Organization with this ID already exists.") from exc
 
     def get_org(self, org_id: int) -> Optional[Organization]:
         """Retrieve an organization by ID."""
@@ -79,8 +95,7 @@ class Database:
 
     def update_org(self, org_id: int, org: Organization):
         """Update an existing organization."""
-        self.org_collection.update_one(
-            {"id": org_id}, {"$set": org.model_dump()})
+        self.org_collection.update_one({"id": org_id}, {"$set": org.model_dump()})
 
     def delete_org(self, org_id: int):
         """Delete an organization by ID."""
@@ -95,14 +110,45 @@ class Database:
 
             team_subnet_cidr = CIDR.from_string(team.cidr)
 
-            team_network = Network(
-                f"{team.name}-network", cidr=team_subnet_cidr)
+            team_network = Network(f"{team.name}-network", cidr=team_subnet_cidr)
+
+            # TODO: this would use engine-agnostic models
+            team_docker_network = DockerNetwork(
+                name=team_network.name,
+                ipam=DockerIPAM(
+                    config=[
+                        DockerIPAMConfig(
+                            subnet=str(team_network.cidr),
+                        )
+                    ]
+                ),
+            )
+
+            services: dict[str, DockerService] = {}
 
             # Deploy services when a team is created
-            for service in team.services:
+            for teamService in team.services:
                 serviceAddress = team_network.next_host_address()
-                manifest = self._create_manifest(service)
-                self.compose.provision(manifest)
+
+                # TODO: these should be handled by model converters
+                dockerService = DockerService(
+                    image="",  # TODO: get image from service
+                    networks={
+                        team_docker_network.name: DockerNetworkSpec(
+                            ipv4_address=str(serviceAddress),
+                        )
+                    },
+                    command=None,  # TODO: might need a custom command for additional setup, like setting up scripts or variables inside the container
+                )
+
+                services[teamService.name] = dockerService
+
+            manifest = Manifest(
+                services=services,
+                networks={team_docker_network.name: team_docker_network},
+            )
+
+            # TODO: configure router, routes, DNS, etc etc
 
     def delete_team(self, org_id: int, team_id: int):
         """Remove a team from an existing organization."""
@@ -136,7 +182,8 @@ class Database:
             for team in org.teams:
                 if team.id == team_id:
                     service = next(
-                        (s for s in team.services if s.name == service_name), None)
+                        (s for s in team.services if s.name == service_name), None
+                    )
                     if service:
                         manifest = self._create_manifest(service)
                         self.compose.tear_down(manifest)
@@ -148,15 +195,19 @@ class Database:
             for team in org.teams:
                 if team.id == team_id:
                     service = next(
-                        (s for s in team.services if s.name == service_name), None)
+                        (s for s in team.services if s.name == service_name), None
+                    )
                     if service:
                         manifest = self._create_manifest(service)
                         self.compose.provision(manifest)
 
     def _create_manifest(self, service: Service) -> Manifest:
         """Create a Manifest object from a Service."""
-        services = {service.name: ManifestService(
-            image="example_image", ports=["80"], environment=[])}
+        services = {
+            service.name: DockerService(
+                image="example_image", ports=["80"], environment=[]
+            )
+        }
         return Manifest(services=services)
 
     def _assign_ip_address(self, cidr_str: str) -> str:

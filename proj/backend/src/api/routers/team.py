@@ -52,7 +52,9 @@ async def get_team_services(org_id: int, team_id: int, db: Database = Depends(ge
 
 
 @router.put("/org/{org_id}/team/{team_id}/service/{service_name}/deploy")
-async def deploy_service(org_id: int, team_id: int, service_name: str, db: Database = Depends(get_db)):
+async def deploy_service(
+    org_id: int, team_id: int, service_name: str, db: Database = Depends(get_db)
+):
     """
     Deploy a new service for a team.
     """
@@ -69,7 +71,9 @@ async def deploy_service(org_id: int, team_id: int, service_name: str, db: Datab
 
 
 @router.put("/org/{org_id}/team/{team_id}/service/{service_name}/stop")
-async def stop_service(org_id: int, team_id: int, service_name: str, db: Database = Depends(get_db)):
+async def stop_service(
+    org_id: int, team_id: int, service_name: str, db: Database = Depends(get_db)
+):
     """
     Stop a service of a team.
     """
@@ -78,7 +82,9 @@ async def stop_service(org_id: int, team_id: int, service_name: str, db: Databas
 
 
 @router.put("/org/{org_id}/team/{team_id}/service/{service_name}/start")
-async def start_service(org_id: int, team_id: int, service_name: str, db: Database = Depends(get_db)):
+async def start_service(
+    org_id: int, team_id: int, service_name: str, db: Database = Depends(get_db)
+):
     """
     Start a service for a team.
     """

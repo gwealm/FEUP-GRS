@@ -19,6 +19,7 @@ class Host:
         self.name = name
         self.image = image
 
+
 T = TypeVar("T")
 
 

@@ -4,6 +4,7 @@ from ..dependencies import get_db
 
 router = APIRouter()
 
+
 @router.post("/org/")
 async def create_org(db: Database = Depends(get_db)):
     """
@@ -13,6 +14,7 @@ async def create_org(db: Database = Depends(get_db)):
     org = Organization(id=org_id, name=f"Organization {org_id}", teams=[])
     db.create_org(org)
     return {"message": "Organization created", "organization_id": org_id}
+
 
 @router.get("/org/{org_id}/teams")
 async def get_teams(org_id: int, db: Database = Depends(get_db)):

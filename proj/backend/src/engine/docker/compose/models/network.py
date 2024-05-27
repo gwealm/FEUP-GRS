@@ -122,6 +122,11 @@ class Network(HasLabels, CanBeExternal, GenerateConfig):
     Only supported in Compose File Version 2.
     """
 
+    external: Optional[bool] = None
+    """
+    Specifies that the given network should not be created by Compose when processing a given manifest.
+    """
+
     ipam: Optional[IPAM] = None
     """
     IP Address Management options for this network.
@@ -152,6 +157,7 @@ class Network(HasLabels, CanBeExternal, GenerateConfig):
 
         name = network_spec.get("name", network_name)
         internal = network_spec.get("internal", None)
+        external = network_spec.get("external", None)
         enable_ipv6 = network_spec.get("enable_ipv6", None)
         attachable = network_spec.get("attachable", None)
         driver = network_spec.get("driver", None)
@@ -165,6 +171,7 @@ class Network(HasLabels, CanBeExternal, GenerateConfig):
             name=name,
             internal=internal,
             enable_ipv6=enable_ipv6,
+            external=external,
             attachable=attachable,
             driver=driver,
             driver_opts=driver_opts,

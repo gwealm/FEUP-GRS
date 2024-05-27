@@ -20,12 +20,12 @@
 		<ul class="flex flex-col">
 			{#if service.deployedAt}
 				<li class="">
-					<span class="text-slate-500 opacity-75">Deployed at</span>
-					<span class="font-bold text-gray-500">{service.ipAddress}</span>
+					<span class="text-slate-500 opacity-75">Deployed at:</span>
+					<span class="font-bold text-gray-500">{service.deployedAt}</span>
 				</li>
 			{/if}
 			<li class="">
-				<span class="text-slate-500 opacity-75">Deployed at</span>
+				<span class="text-slate-500 opacity-75">Address:</span>
 				<span class="font-bold text-gray-500">{service.ipAddress}</span>
 			</li>
 		</ul>

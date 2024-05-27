@@ -1,8 +1,6 @@
 """
 """
 
-import re
-
 
 class IPAddress:
     """ """
@@ -21,7 +19,7 @@ class IPAddress:
         part1, part2, part3, part4 = self.address.split(".")
 
         return (
-            int(part1) * 256 ^ 3 + int(part2) * 256 ^ 2 + int(part3) * 256 + int(part4)
+            (int(part1) * 256 ** 3) + (int(part2) * 256 ** 2) + (int(part3) ** 256) + int(part4)
         )
 
     def __gt__(self, other: "IPAddress") -> bool:
@@ -66,8 +64,8 @@ class IPAddress:
 
         part4 = final_address_number % 256
         part3 = (final_address_number // 256) % 256
-        part2 = (final_address_number // 256 ^ 2) % 256
-        part1 = (final_address_number // 256 ^ 3) % 256
+        part2 = (final_address_number // 256 ** 2) % 256
+        part1 = (final_address_number // 256 ** 3) % 256
 
         return IPAddress(f"{part1}.{part2}.{part3}.{part4}")
 
@@ -161,14 +159,7 @@ class CIDR:
         if not cidr_str:
             raise ValueError("CIDR string cannot be empty")
 
-        pattern = r"(\d{1,3}(?:\.\d{1,3}){3})\/(\d){1,2}"
-
-        matches = re.match(pattern, cidr_str)
-
-        if matches is None:
-            raise ValueError("CIDR is not in the right format")
-
-        base_address, mask_size = matches.groups()
+        base_address, mask_size = cidr_str.split("/")
 
         return CIDR(
             base_address=IPAddress.from_string(base_address), mask_size=int(mask_size)

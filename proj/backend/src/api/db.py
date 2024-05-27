@@ -5,7 +5,8 @@ from datetime import datetime
 import os
 
 from pymongo import MongoClient
-from bson.objectid import ObjectId
+from bson import ObjectId
+from bson import DBRef
 from pydantic import BaseModel
 
 from dotenv import load_dotenv
@@ -32,6 +33,8 @@ class Service(BaseModel):
     description: Optional[str] = None
     image: Optional[str] = None
     tag: Optional[str] = None
+    deployedAt: Optional[str] = None
+    ipAddress: Optional[str] = None
 
 
 # TODO: need to have: CIDR, services with IPs (single-router setup needs to have the last IP)
@@ -112,8 +115,15 @@ class Database:
             del team["_id"]
 
             services = []
-            for service_id in team["services"]:
-                service = self.get_service(service_id)
+            for service in team["services"]:
+
+                service_ref = service["ref"]
+                deployed_at = service["deployed_at"]
+                ip_address = service["ip_address"]
+
+                service = self.get_service(service_ref.id)
+                service.deployedAt = deployed_at
+                service.ipAddress = ip_address
 
                 services.append(service)
 
@@ -134,8 +144,15 @@ class Database:
         del team["_id"]
 
         services = []
-        for service_id in team["services"]:
-            service = self.get_service(service_id)
+        for service in team["services"]:
+
+            service_ref = service["ref"]
+            deployed_at = service["deployed_at"]
+            ip_address = service["ip_address"]
+
+            service = self.get_service(str(service_ref.id))
+            service.deployedAt = deployed_at
+            service.ipAddress = ip_address
 
             services.append(service)
 
@@ -146,7 +163,10 @@ class Database:
     def create_team(self, team_spec: TeamCreationRequestPayload) -> Team:
         """Add a team to an existing organization."""
 
+        print(team_spec.cidr)
+
         team_subnet_cidr = CIDR.from_string(team_spec.cidr)
+        print(team_subnet_cidr)
 
         team_network = Network(f"{team_spec.name}-network", cidr=team_subnet_cidr)
 
@@ -162,15 +182,22 @@ class Database:
             ),
         )
 
+        team_spec_data = team_spec.model_dump()
+
+        team_services_ids = team_spec_data['services']
+        del team_spec_data['services']
+
         services: dict[str, DockerService] = {}
+        team_services = []
 
         # Deploy services when a team is created
-        for team_service_id in team_spec.services:
+        for team_service_id in team_services_ids:
 
             service = self.get_service(team_service_id)
-            print(team_service_id, service, team_spec.services)
 
             service_address = team_network.next_host_address()
+
+            print(service_address)
 
             # TODO: these should be handled by model converters
             docker_service = DockerService(
@@ -184,10 +211,12 @@ class Database:
             )
 
             services[service.name] = docker_service
+            team_services.append({"ref": DBRef(collection='services', id=team_service_id), "deployed_at": datetime.now(), "ip_address": str(service_address)})
 
         result = self.team_collection.insert_one(
             {
-                **team_spec.model_dump(),
+                **team_spec_data,
+                "services": team_services,
                 "createdAt": datetime.now(),
                 "updatedAt": datetime.now(),
             }
@@ -199,9 +228,6 @@ class Database:
         )
 
         team = self.get_team(result.inserted_id)
-
-        print(manifest)
-        print(team)
 
         return team
 

@@ -12,6 +12,7 @@ services:
       - "53:53/tcp"
     command: >
       /bin/sh -c '
+      apt update && apt install -y vim iproute2 iputils-ping tcpdump iptables dnsutils curl apache2-utils python3
       echo "options {
         directory \"/var/cache/bind\";
         forwarders {
@@ -47,7 +48,8 @@ services:
       named -g -c /etc/bind/named.conf &&
       while true; do /bin/sleep 5m; done
       '
-
+    depends_on:
+      - reverse_proxy
   web:
     image: nginx:latest
     container_name: {{ teamname }}_web
@@ -61,6 +63,7 @@ services:
       - ./html:/usr/share/nginx/html
     command: >
       /bin/sh -c '
+      apt update && apt install -y vim iproute2 iputils-ping tcpdump iptables dnsutils curl apache2-utils &&
       echo "server {
         listen 80 default_server;
         listen [::]:80 default_server;
@@ -75,6 +78,9 @@ services:
       nginx -g "daemon off;" &&
       while true; do /bin/sleep 5m; done
       '
+    depends_on:
+      - dns
+      - reverse_proxy
 
   reverse_proxy:
     image: ubuntu:20.04
@@ -88,8 +94,7 @@ services:
       - NET_ADMIN
     command: >
       /bin/sh -c '
-      apt-get update &&
-      apt-get install -y squid iptables &&
+      apt update && apt install -y squid vim iproute2 iputils-ping tcpdump iptables dnsutils curl apache2-utils &&
       echo "http_port 3128
       acl localnet src {{ subnet }}
       http_access allow localnet

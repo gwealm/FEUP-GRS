@@ -60,6 +60,8 @@ class GenerateConfig(ABC):
 
                 if isinstance(value, GenerateConfig):
                     config[attr] = value.to_dict()
+                elif isinstance(value, list):
+                    config[attr] = [v.to_dict() if isinstance(v, GenerateConfig) else v for v in value]
                 else:
                     config[attr] = value
 

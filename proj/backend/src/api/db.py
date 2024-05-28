@@ -198,7 +198,7 @@ class Database:
 
             # TODO: these should be handled by model converters
             docker_service = DockerService(
-                image="",  # TODO: get image from service
+                image=service.image,  # TODO: get image from service
                 networks={
                     team_docker_network.name: DockerNetworkSpec(
                         ipv4_address=str(service_address),

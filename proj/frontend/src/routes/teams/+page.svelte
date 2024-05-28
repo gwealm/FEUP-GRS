@@ -126,7 +126,7 @@
 							<Select.Trigger {...attrs}>
 								<Select.Value placeholder="Select services" />
 							</Select.Trigger>
-							<Select.Content>
+							<Select.Content class="max-h-[15rem] overflow-y-auto">
 								{#each Object.entries(services) as [category, serviceGroup]}
 									<Select.Group>
 										<Select.Label>

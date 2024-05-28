@@ -81,7 +81,7 @@ class Database:
         self.compose = DockerCompose()
         self.handler = DockerComposeManifestHandler()
 
-        self.manifest_template = self.handler.load(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "templates", "docker-compose.yml")) # FIXME: black magic
+        self.manifest_template = self.handler.load(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "templates", "team-template.yml")) # FIXME: black magic
 
     def get_services(self) -> list[Service]:
         """Get all services."""

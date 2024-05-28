@@ -1,124 +1,27 @@
 version: '3.8'
 
 services:
-  dns:
-    image: internetsystemsconsortium/bind9:9.16
-    container_name: {{ teamname }}_dns
+  router:
+    image: ubuntu:20.04
+    container_name: {{ orgname }}_router
     networks:
-      {{ teamname }}_net:
-        ipv4_address: {{ dns_ip }}
-    ports:
-      - "53:53/udp"
-      - "53:53/tcp"
+      {{ orgname }}_ext_net:
+        ipv4_address: {{ router_ip }}
     cap_add:
       - "NET_ADMIN"
-    user: root
     command: >
       /bin/sh -c '
       apt update && apt install -y vim iproute2 iputils-ping tcpdump iptables dnsutils curl apache2-utils python3 &&
-      mkdir -p /var/cache/bind &&
-        chown -R bind:bind /var/cache/bind &&
-        chown -R bind:bind /etc/bind &&
-        echo "options {
-          directory \"/var/cache/bind\";
-          forwarders {
-            8.8.8.8;
-            8.8.4.4;
-          };
-          allow-query { any; };
-          recursion yes;
-          listen-on { any; };
-          dnssec-validation auto;
-        };" > /etc/bind/named.conf.options &&
-        echo "zone \".\" {
-          type hint;
-          file \"/usr/share/dns/root.hints\";
-        };
-        zone \"localhost\" {
-          type master;
-          file \"/etc/bind/db.local\";
-        };
-        zone \"127.in-addr.arpa\" {
-          type master;
-          file \"/etc/bind/db.127\";
-        };
-        zone \"0.in-addr.arpa\" {
-          type master;
-          file \"/etc/bind/db.0\";
-        };
-        zone \"255.in-addr.arpa\" {
-          type master;
-          file \"/etc/bind/db.255\";
-        };" > /etc/bind/named.conf.default-zones &&
-        ip route replace default via {{ proxy_ip }} &&
-        while true; do /bin/sleep 5m; done
-      '
-    depends_on:
-      - reverse_proxy
-  web:
-    image: nginx:latest
-    container_name: {{ teamname }}_web
-    networks:
-      {{ teamname }}_net:
-        ipv4_address: {{ web_ip }}
-    ports:
-      - "80:80"
-      - "443:443"
-    cap_add:
-      - "NET_ADMIN"
-    volumes:
-      - ./html:/usr/share/nginx/html
-    command: >
-      /bin/sh -c '
-      apt update && apt install -y vim iproute2 iputils-ping tcpdump iptables dnsutils curl apache2-utils &&
-      echo "server {
-        listen 80 default_server;
-        listen [::]:80 default_server;
-        root /usr/share/nginx/html;
-        index index.html index.htm index.nginx-debian.html;
-        server_name _;
-        location / {
-          try_files \$uri \$uri/ =404;
-        }
-      }" > /etc/nginx/conf.d/default.conf &&
-      ip route replace default via {{ proxy_ip }} &&
-      nginx -g "daemon off;" &&
-      while true; do /bin/sleep 5m; done
-      '
-    depends_on:
-      - dns
-      - reverse_proxy
-
-  reverse_proxy:
-    image: ubuntu/squid:latest
-    container_name: {{ teamname }}_reverse_proxy
-    networks:
-      {{ teamname }}_net:
-        ipv4_address: {{ proxy_ip }}
-    ports:
-      - "3128:3128"
-    cap_add:
-      - NET_ADMIN
-    command: >
-      /bin/sh -c '
-      apt update && apt install -y vim iproute2 iputils-ping &&
-      echo "http_port 3128
-      acl {{ teamname }}_net src {{ subnet }}
-      http_access allow {{ teamname }}_net
-      http_access deny all
-      visible_hostname squid
-      " > /etc/squid/squid.conf &&
+      iptables -t nat -A POSTROUTING --out-interface eth1 -j MASQUERADE &&
+      iptables -A FORWARD --in-interface eth2 -j ACCEPT &&
+      iptables -A FORWARD --in-interface eth3 -j ACCEPT &&
       echo 1 > /proc/sys/net/ipv4/ip_forward &&
-      iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE &&
-      iptables -t nat -A PREROUTING -i eth0 -p tcp --dport 80 -j REDIRECT --to-port 3128 &&
-      iptables -t nat -A PREROUTING -i eth0 -p tcp --dport 443 -j REDIRECT --to-port 3128 &&
-      squid -NYCd 1 &&
       while true; do /bin/sleep 5m; done
       '
 
 networks:
-  {{ teamname }}_net:
-    driver: bridge
+  {{ orgname }}_ext_net:
+    driver: default
     ipam:
       config:
         - subnet: {{ subnet }}

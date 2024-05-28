@@ -8,11 +8,11 @@ compose = DockerCompose()
 manifest_template = handler.load("../templates/docker-compose.yml")
 
 manifest = manifest_template.compile({
-    "teamname": "test_team",
+    "orgname": "test_org",
     "subnet": "172.20.0.0/16",
-    "web_ip": "172.20.0.3",
+    "router_ip": "172.20.0.3",
     "proxy_ip": "172.20.0.4",
-    "dns_ip": "172.20.0.2",
+    "client_1_ip": "172.20.0.2",
 })
 
 if compose.is_available():

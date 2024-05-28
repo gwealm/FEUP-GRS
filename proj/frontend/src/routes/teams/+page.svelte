@@ -25,6 +25,7 @@
 
 	$: teams = data.teams;
 	$: services = data.services;
+	$: defaultServices = data.defaultServices;
 
 	$: flattenedServices = Object.values(services).flat();
 
@@ -51,7 +52,7 @@
 		</AlertDialog.Trigger>
 		<AlertDialog.Content>
 			<AlertDialog.Header>
-				<AlertDialog.Title>Create new team</AlertDialog.Title>
+				<AlertDialog.Title class="text-xl">Create new team</AlertDialog.Title>
 			</AlertDialog.Header>
 			<form
 				method="POST"
@@ -105,6 +106,17 @@
 					<Form.FieldErrors />
 				</Form.Field>
 				<Form.Field {form} name="services">
+					<div class="my-5 flex flex-col gap-3">
+						<span class="font-bold">Default services for this team:</span>
+						<ul class="flex flex-col gap-2">
+							{#each defaultServices as service}
+								<li class="flex gap-2">
+									<span class="font-bold">{service.label}</span> -
+									<span class="opacity-75">{service.description}</span>
+								</li>
+							{/each}
+						</ul>
+					</div>
 					<Form.Control let:attrs>
 						<Form.Label>Select additional services to deploy</Form.Label>
 						<Select.Root
@@ -145,7 +157,7 @@
 				</Form.Field>
 
 				<!-- FIXME: this looks weird -->
-				<AlertDialog.Footer>
+				<AlertDialog.Footer class="mt-7">
 					<AlertDialog.Cancel>Cancel</AlertDialog.Cancel>
 					<AlertDialog.Action asChild><Form.Button>Create</Form.Button></AlertDialog.Action>
 				</AlertDialog.Footer>

@@ -61,9 +61,15 @@ class GenerateConfig(ABC):
                 if isinstance(value, GenerateConfig):
                     config[attr] = value.to_dict()
                 elif isinstance(value, list):
-                    config[attr] = [v.to_dict() if isinstance(v, GenerateConfig) else v for v in value]
+                    config[attr] = [
+                        v.to_dict() if isinstance(v, GenerateConfig) else v
+                        for v in value
+                    ]
                 elif isinstance(value, dict):
-                    config[attr] = {k: v.to_dict() if isinstance(v, GenerateConfig) else v for k, v in value.items()}
+                    config[attr] = {
+                        k: v.to_dict() if isinstance(v, GenerateConfig) else v
+                        for k, v in value.items()
+                    }
                 else:
                     config[attr] = value
 

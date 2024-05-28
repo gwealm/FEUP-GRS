@@ -15,6 +15,7 @@ async def get_teams(db: Database = Depends(get_db)):
 
     return teams
 
+
 @router.get("/{team_id}")
 async def get_team(team_id: str, db: Database = Depends(get_db)):
     """
@@ -30,7 +31,9 @@ async def get_team(team_id: str, db: Database = Depends(get_db)):
 
 
 @router.post("/")
-async def create_team(team_spec: TeamCreationRequestPayload, db: Database = Depends(get_db)):
+async def create_team(
+    team_spec: TeamCreationRequestPayload, db: Database = Depends(get_db)
+):
     """
     Create a new team in the organization.
     """

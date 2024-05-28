@@ -78,7 +78,7 @@ class IPAM(GenerateConfig):
             IPAM: an object representing the IPAM specification
         """
 
-        driver = ipam_spec.get("driver", None)   
+        driver = ipam_spec.get("driver", None)
 
         config: Optional[list[IPAMConfig]] = None
         if "config" in ipam_spec:

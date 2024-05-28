@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  router:
+    build:
+      context: {{ project_base_path }}/services/router
+      dockerfile: Dockerfile
+    container_name: {{ orgname }}_router
+    networks:
+      {{ orgname }}_ext_net:
+        ipv4_address: {{ router_ip }}
+    privileged: true
+    cap_add:
+      - "NET_ADMIN"
+
+
+networks:
+  {{ orgname }}_ext_net:
+    ipam:
+      config:
+        - subnet: {{ subnet }}

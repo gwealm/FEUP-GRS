@@ -7,6 +7,9 @@ services:
     networks:
       {{ teamname }}_net:
         ipv4_address: {{ dns_ip }}
+    labels:
+      service.description: "Team-specific DNS server and sub-domain"
+      service.label: "DNS Server"
     ports:
       - "53:53/udp"
       - "53:53/tcp"
@@ -53,14 +56,16 @@ services:
         ip route replace default via {{ proxy_ip }} &&
         while true; do /bin/sleep 5m; done
       '
-    depends_on:
-      - reverse_proxy
+
   web:
     image: nginx:latest
     container_name: {{ teamname }}_web
     networks:
       {{ teamname }}_net:
         ipv4_address: {{ web_ip }}
+    labels:
+      service.description: "Default Nginx Web Server"
+      service.label: "Web Server"
     ports:
       - "80:80"
       - "443:443"
@@ -87,34 +92,33 @@ services:
       '
     depends_on:
       - dns
-      - reverse_proxy
 
-  reverse_proxy:
-    image: ubuntu/squid:latest
-    container_name: {{ teamname }}_reverse_proxy
-    networks:
-      {{ teamname }}_net:
-        ipv4_address: {{ proxy_ip }}
-    ports:
-      - "3128:3128"
-    cap_add:
-      - NET_ADMIN
-    command: >
-      /bin/sh -c '
-      apt update && apt install -y vim iproute2 iputils-ping &&
-      echo "http_port 3128
-      acl {{ teamname }}_net src {{ subnet }}
-      http_access allow {{ teamname }}_net
-      http_access deny all
-      visible_hostname squid
-      " > /etc/squid/squid.conf &&
-      echo 1 > /proc/sys/net/ipv4/ip_forward &&
-      iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE &&
-      iptables -t nat -A PREROUTING -i eth0 -p tcp --dport 80 -j REDIRECT --to-port 3128 &&
-      iptables -t nat -A PREROUTING -i eth0 -p tcp --dport 443 -j REDIRECT --to-port 3128 &&
-      squid -NYCd 1 &&
-      while true; do /bin/sleep 5m; done
-      '
+#   reverse_proxy:
+#     image: ubuntu/squid:latest
+#     container_name: {{ teamname }}_reverse_proxy
+#     networks:
+#       {{ teamname }}_net:
+#         ipv4_address: {{ proxy_ip }}
+#     ports:
+#       - "3128:3128"
+#     cap_add:
+#       - NET_ADMIN
+#     command: >
+#       /bin/sh -c '
+#       apt update && apt install -y vim iproute2 iputils-ping &&
+#       echo "http_port 3128
+#       acl {{ teamname }}_net src {{ subnet }}
+#       http_access allow {{ teamname }}_net
+#       http_access deny all
+#       visible_hostname squid
+#       " > /etc/squid/squid.conf &&
+#       echo 1 > /proc/sys/net/ipv4/ip_forward &&
+#       iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE &&
+#       iptables -t nat -A PREROUTING -i eth0 -p tcp --dport 80 -j REDIRECT --to-port 3128 &&
+#       iptables -t nat -A PREROUTING -i eth0 -p tcp --dport 443 -j REDIRECT --to-port 3128 &&
+#       squid -NYCd 1 &&
+#       while true; do /bin/sleep 5m; done
+#       '
 
 networks:
   {{ teamname }}_net:

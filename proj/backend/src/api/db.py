@@ -3,6 +3,8 @@
 from typing import List, Optional
 from datetime import datetime
 import os
+import subprocess
+import shlex
 
 from pymongo import MongoClient
 from bson import ObjectId
@@ -12,9 +14,11 @@ from pydantic import BaseModel
 from dotenv import load_dotenv
 from engine.docker.compose import DockerCompose
 from engine.docker.compose.handler import DockerComposeManifestHandler
-from engine.docker.compose.manifest import Manifest
 from engine.docker.compose.models.service import NetworkSpec as DockerNetworkSpec
 from engine.docker.compose.models.service import Service as DockerService
+
+# FIXME: yikes...
+interface_no = 1
 
 # Importing Network, CIDR, IPAddress
 from engine.models.network import CIDR, Network
@@ -171,6 +175,8 @@ class Database:
 
         team_name_escaped = team_spec.name.replace(' ', '-')
 
+        team_network_name = f"{team_name_escaped}_net"
+
         team_network = Network(f"{team_name_escaped}-network", cidr=team_subnet_cidr)
         _gateway_ip = team_network.next_host_address()
 
@@ -205,7 +211,7 @@ class Database:
             docker_service = DockerService(
                 image=service.image,  # TODO: get image from service
                 networks={
-                    f"{team_name_escaped}_net": DockerNetworkSpec(
+                    team_network_name: DockerNetworkSpec(
                         ipv4_address=str(service_address),
                     )
                 },
@@ -230,6 +236,31 @@ class Database:
         print(self.compose.handler.dump(manifest))
 
         self.compose.provision(manifest)
+
+        router_ip = team_network.next_host_address()
+        subprocess.run(
+            shlex.split(f"docker network connect --ip {str(router_ip)} {team_network_name} {os.getenv("ORG_NAME")}_router"),
+            check=True,
+            capture_output=False,
+        )
+
+        subprocess.run(
+            shlex.split(f"docker exec {os.getenv("ORG_NAME")}_router /bin/sh -c 'iptables -P FORWARD ACCEPT'"),
+            check=True,
+            capture_output=False,
+        )
+
+        for service in manifest.services.values():
+
+            print(f"Attempting default gateway for service {service.container_name} to {str(router_ip)}")
+            try:
+                subprocess.run(
+                    shlex.split(f"docker exec {service.container_name} /bin/sh -c 'command -v ip >/dev/null 2>&1 && ip r add {os.getenv("ORG_SUBNET")} via {str(router_ip)}'"),
+                    check=True,
+                    capture_output=False,
+                )
+            except:
+                print(f"Failed to configure default gateway for service {service.container_name} to {str(router_ip)}")
 
         team = self.get_team(result.inserted_id)
 
@@ -274,6 +305,12 @@ class Database:
             )
 
             manifest.services[service_name] = docker_service
+
+        subprocess.run(
+            shlex.split(f"docker network disconnect {team_name_escaped}_net {os.getenv("ORG_NAME")}_router"),
+            check=True,
+            capture_output=False,
+        )
 
         self.compose.tear_down(manifest)
 

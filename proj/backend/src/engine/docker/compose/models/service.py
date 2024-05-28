@@ -331,7 +331,7 @@ class NetworkSpec(GenerateConfig):
     Defines the MAC address for the service container on the network.
     """
 
-    priority: Optional[int] = field(default=0)
+    priority: Optional[int] = None
     """
     Indicates in which order Compose connects the service’s containers to its networks.
     """
@@ -2092,7 +2092,7 @@ class Service(HasLabels, GenerateConfig):
 
     pull_policy: Optional[
         Literal["always", "never", "missing", "build", "if_not_present"]
-    ] = field(default="missing")
+    ] = None
     """
     Defines the decisions Compose makes when it starts to pull images
     """
@@ -2104,12 +2104,12 @@ class Service(HasLabels, GenerateConfig):
 
     restart: Optional[
         Literal["no", "always", "unless-stopped"] | FailureRestartPolicy
-    ] = field(default="no")
+    ] = None
     """
     Defines the policy that the platform applies on container termination.
     """
 
-    runtime: Optional[Literal["runc"]] = field(default="runc")
+    runtime: Optional[Literal["runc"]] = None
     """
     Specifies which runtime to use for the service’s containers.
     """

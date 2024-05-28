@@ -11,10 +11,8 @@ from pydantic import BaseModel
 
 from dotenv import load_dotenv
 from engine.docker.compose import DockerCompose
+from engine.docker.compose.handler import DockerComposeManifestHandler
 from engine.docker.compose.manifest import Manifest
-from engine.docker.compose.models.network import IPAM as DockerIPAM
-from engine.docker.compose.models.network import IPAMConfig as DockerIPAMConfig
-from engine.docker.compose.models.network import Network as DockerNetwork
 from engine.docker.compose.models.service import NetworkSpec as DockerNetworkSpec
 from engine.docker.compose.models.service import Service as DockerService
 
@@ -32,6 +30,7 @@ class Service(BaseModel):
 
     id: str
     name: str
+    slug: str
     description: Optional[str] = None
     image: Optional[str] = None
     tag: Optional[str] = None
@@ -80,6 +79,9 @@ class Database:
         self.service_collection.create_index({"_id": 1})
 
         self.compose = DockerCompose()
+        self.handler = DockerComposeManifestHandler()
+
+        self.manifest_template = self.handler.load(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "templates", "docker-compose.yml")) # FIXME: black magic
 
     def get_services(self) -> list[Service]:
         """Get all services."""
@@ -167,19 +169,20 @@ class Database:
 
         team_subnet_cidr = CIDR.from_string(team_spec.cidr)
 
-        team_network = Network(f"{team_spec.name}-network", cidr=team_subnet_cidr)
+        team_name_escaped = team_spec.name.replace(' ', '-')
 
-        # TODO: this would use engine-agnostic models
-        team_docker_network = DockerNetwork(
-            name=team_network.name,
-            ipam=DockerIPAM(
-                config=[
-                    DockerIPAMConfig(
-                        subnet=str(team_network.cidr),
-                    )
-                ]
-            ),
-        )
+        team_network = Network(f"{team_name_escaped}-network", cidr=team_subnet_cidr)
+        _gateway_ip = team_network.next_host_address()
+
+        manifest_vars = {
+            "teamname": team_name_escaped,
+            "subnet": str(team_subnet_cidr),
+            "web_ip": str(team_network.next_host_address()),
+            "proxy_ip": str(team_network.next_host_address()),
+            "dns_ip": str(team_network.next_host_address()),
+        }
+
+        manifest = self.manifest_template.compile(manifest_vars)
 
         team_spec_data = team_spec.model_dump()
 
@@ -196,18 +199,21 @@ class Database:
 
             service_address = team_network.next_host_address()
 
+            service_name = f"{team_name_escaped}_{service.slug}"
+
             # TODO: these should be handled by model converters
             docker_service = DockerService(
                 image=service.image,  # TODO: get image from service
                 networks={
-                    team_docker_network.name: DockerNetworkSpec(
+                    f"{team_name_escaped}_net": DockerNetworkSpec(
                         ipv4_address=str(service_address),
                     )
                 },
                 command=None,  # TODO: might need a custom command for additional setup, like setting up scripts or variables inside the container
+                container_name=service_name
             )
 
-            services[service.name] = docker_service
+            services[service_name] = docker_service
             team_services.append({"ref": DBRef(collection='services', id=team_service_id), "deployed_at": datetime.now(), "ip_address": str(service_address)})
 
         result = self.team_collection.insert_one(
@@ -219,10 +225,11 @@ class Database:
             }
         )
 
-        manifest = Manifest(
-            services=services,
-            networks={team_docker_network.name: team_docker_network},
-        )
+        manifest.services.update(services)
+
+        print(self.compose.handler.dump(manifest))
+
+        self.compose.provision(manifest)
 
         team = self.get_team(result.inserted_id)
 
@@ -233,6 +240,41 @@ class Database:
     def delete_team(self, team_id: int):
         """Remove a team from an existing organization."""
 
-        # TODO: tear down team services.
+        team = self.get_team(team_id)
+
+        team_subnet_cidr = CIDR.from_string(team.cidr)
+        team_network = Network(f"{team.name}-network", cidr=team_subnet_cidr)
+        team_network.next_host_address() # skip gateway
+
+        team_name_escaped = team.name.replace(' ', '-')
+
+        manifest_vars = {
+            "teamname": team_name_escaped,
+            "subnet": str(team_subnet_cidr),
+            "web_ip": str(team_network.next_host_address()),
+            "proxy_ip": str(team_network.next_host_address()),
+            "dns_ip": str(team_network.next_host_address()),
+        }
+
+        manifest = self.manifest_template.compile(manifest_vars)
+
+        for service in team.services:
+
+            service_name = f"{team_name_escaped}_{service.slug}"
+
+            docker_service = DockerService(
+                image=service.image,  # TODO: get image from service
+                networks={
+                    f"{team_name_escaped}_net": DockerNetworkSpec(
+                        ipv4_address=service.ipAddress,
+                    )
+                },
+                command=None,  # TODO: might need a custom command for additional setup, like setting up scripts or variables inside the container
+                container_name=service_name
+            )
+
+            manifest.services[service_name] = docker_service
+
+        self.compose.tear_down(manifest)
 
         result = self.team_collection.delete_one({"_id": ObjectId(team_id)})

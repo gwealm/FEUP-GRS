@@ -90,7 +90,7 @@ services:
       - reverse_proxy
 
   reverse_proxy:
-    image: ubuntu:20.04
+    image: ubuntu/squid:latest
     container_name: {{ teamname }}_reverse_proxy
     networks:
       {{ teamname }}_net:
@@ -101,10 +101,10 @@ services:
       - NET_ADMIN
     command: >
       /bin/sh -c '
-      apt update && apt install -y squid vim iproute2 iputils-ping tcpdump iptables dnsutils curl apache2-utils &&
+      apt update && apt install -y vim iproute2 iputils-ping &&
       echo "http_port 3128
-      acl localnet src {{ subnet }}
-      http_access allow localnet
+      acl {{ teamname }}_net src {{ subnet }}
+      http_access allow {{ teamname }}_net
       http_access deny all
       visible_hostname squid
       " > /etc/squid/squid.conf &&

@@ -16,24 +16,28 @@ db.createCollection('teams');
 db.services.insertMany([
     {
         name: 'MongoDB',
+        slug: 'mongo',
         description: 'MongoDB Database Service',
-        image: "redis",
-        tag: "DB"
-    },
-    {
-        name: 'Redis',
-        description: 'Redis KV Store and Cache',
         image: "mongo",
         tag: "DB"
     },
     {
+        name: 'Redis',
+        slug: 'redis',
+        description: 'Redis KV Store and Cache',
+        image: "redis",
+        tag: "DB"
+    },
+    {
         name: 'GitLab',
+        slug: 'gitlab',
         description: 'GitLab Version Control System',
         image: "gitlab/gitlab-ce",
         tag: "VCS"
     },
     {
         name: 'Squid Proxy',
+        slug: 'squid',
         description: 'Squid Forward Proxy',
         image: "ubuntu/squid:latest",
         tag: "Proxy"

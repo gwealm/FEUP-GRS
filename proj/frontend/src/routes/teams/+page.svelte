@@ -73,7 +73,12 @@
 					<Form.Field {form} name="baseAddress" class="flex-1">
 						<Form.Control let:attrs>
 							<Form.Label>Base Address</Form.Label>
-							<Input {...attrs} bind:value={$formData.baseAddress} required />
+							<Input
+								{...attrs}
+								bind:value={$formData.baseAddress}
+								required
+								placeholder={"Your address must end with '.0'"}
+							/>
 						</Form.Control>
 						<Form.FieldErrors />
 					</Form.Field>
@@ -101,7 +106,7 @@
 				</Form.Field>
 				<Form.Field {form} name="services">
 					<Form.Control let:attrs>
-						<Form.Label>Select services to deploy</Form.Label>
+						<Form.Label>Select additional services to deploy</Form.Label>
 						<Select.Root
 							multiple
 							selected={selectedServices}

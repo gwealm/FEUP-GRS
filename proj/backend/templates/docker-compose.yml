@@ -10,43 +10,48 @@ services:
     ports:
       - "53:53/udp"
       - "53:53/tcp"
+    cap_add:
+      - "NET_ADMIN"
+    user: root
     command: >
       /bin/sh -c '
-      apt update && apt install -y vim iproute2 iputils-ping tcpdump iptables dnsutils curl apache2-utils python3
-      echo "options {
-        directory \"/var/cache/bind\";
-        forwarders {
-          8.8.8.8;
-          8.8.4.4;
+      apt update && apt install -y vim iproute2 iputils-ping tcpdump iptables dnsutils curl apache2-utils python3 &&
+      mkdir -p /var/cache/bind &&
+        chown -R bind:bind /var/cache/bind &&
+        chown -R bind:bind /etc/bind &&
+        echo "options {
+          directory \"/var/cache/bind\";
+          forwarders {
+            8.8.8.8;
+            8.8.4.4;
+          };
+          allow-query { any; };
+          recursion yes;
+          listen-on { any; };
+          dnssec-validation auto;
+        };" > /etc/bind/named.conf.options &&
+        echo "zone \".\" {
+          type hint;
+          file \"/usr/share/dns/root.hints\";
         };
-        allow-query { any; };
-        recursion yes;
-        listen-on { any; };
-        dnssec-validation auto;
-      };" > /etc/bind/named.conf.options &&
-      echo "zone \".\" {
-        type hint;
-        file \"/usr/share/dns/root.hints\";
-      };
-      zone \"localhost\" {
-        type master;
-        file \"/etc/bind/db.local\";
-      };
-      zone \"127.in-addr.arpa\" {
-        type master;
-        file \"/etc/bind/db.127\";
-      };
-      zone \"0.in-addr.arpa\" {
-        type master;
-        file \"/etc/bind/db.0\";
-      };
-      zone \"255.in-addr.arpa\" {
-        type master;
-        file \"/etc/bind/db.255\";
-      };" > /etc/bind/named.conf.default-zones &&
-      ip route add default via {{ proxy_ip }} &&
-      named -g -c /etc/bind/named.conf &&
-      while true; do /bin/sleep 5m; done
+        zone \"localhost\" {
+          type master;
+          file \"/etc/bind/db.local\";
+        };
+        zone \"127.in-addr.arpa\" {
+          type master;
+          file \"/etc/bind/db.127\";
+        };
+        zone \"0.in-addr.arpa\" {
+          type master;
+          file \"/etc/bind/db.0\";
+        };
+        zone \"255.in-addr.arpa\" {
+          type master;
+          file \"/etc/bind/db.255\";
+        };" > /etc/bind/named.conf.default-zones &&
+        ip route replace default via {{ proxy_ip }} &&
+        while true; do /bin/sleep 5m; done
       '
     depends_on:
       - reverse_proxy
@@ -59,6 +64,8 @@ services:
     ports:
       - "80:80"
       - "443:443"
+    cap_add:
+      - "NET_ADMIN"
     volumes:
       - ./html:/usr/share/nginx/html
     command: >
@@ -74,7 +81,7 @@ services:
           try_files \$uri \$uri/ =404;
         }
       }" > /etc/nginx/conf.d/default.conf &&
-      ip route add default via {{ proxy_ip }} &&
+      ip route replace default via {{ proxy_ip }} &&
       nginx -g "daemon off;" &&
       while true; do /bin/sleep 5m; done
       '

@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  router:
+    image: ubuntu:20.04
+    container_name: {{ orgname }}_router
+    networks:
+      {{ orgname }}_ext_net:
+        ipv4_address: {{ router_ip }}
+    cap_add:
+      - "NET_ADMIN"
+    command: >
+      /bin/sh -c '
+      apt update && apt install -y vim iproute2 iputils-ping tcpdump iptables dnsutils curl apache2-utils python3 &&
+      iptables -t nat -A POSTROUTING --out-interface eth1 -j MASQUERADE &&
+      iptables -A FORWARD --in-interface eth2 -j ACCEPT &&
+      iptables -A FORWARD --in-interface eth3 -j ACCEPT &&
+      echo 1 > /proc/sys/net/ipv4/ip_forward &&
+      while true; do /bin/sleep 5m; done
+      '
+
+networks:
+  {{ orgname }}_ext_net:
+    driver: default
+    ipam:
+      config:
+        - subnet: {{ subnet }}

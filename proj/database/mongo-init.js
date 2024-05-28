@@ -36,20 +36,6 @@ db.services.insertMany([
         tag: "VCS"
     },
     {
-        name: 'Squid Proxy',
-        slug: 'squid',
-        description: 'Squid Forward Proxy',
-        image: "ubuntu/squid:latest",
-        tag: "Proxy"
-    },
-    {
-        name: 'Nginx',
-        slug: 'nginx',
-        description: 'Nginx Web Server',
-        image: "nginx",
-        tag: "Web"
-    },
-    {
         name: 'WordPress',
         slug: 'wordpress',
         description: 'WordPress Content Management System',

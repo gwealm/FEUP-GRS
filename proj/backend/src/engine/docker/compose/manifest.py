@@ -43,12 +43,14 @@ class ManifestTemplate:
         if values is None:
             values = {}
 
+        manifest_str = self.manifest_str
+
         for key, value in values.items():
             pattern = f"{{{{ {key} }}}}"
 
-            self.manifest_str = self.manifest_str.replace(pattern, str(value))
+            manifest_str = manifest_str.replace(pattern, str(value))
 
-        yaml_object = yaml.safe_load(self.manifest_str)
+        yaml_object = yaml.safe_load(manifest_str)
 
         return self._parse_yaml_manifest_object(yaml_object)
 

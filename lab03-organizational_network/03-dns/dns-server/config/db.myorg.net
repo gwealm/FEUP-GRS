@@ -1,0 +1,18 @@
+;
+; BIND data file for local loopback interface
+; 
+$TTL 604800 
+@      IN  SOA grandzero.io. root.myorg.net. (
+             2           ; serial
+             604800      ; refresh
+             86400       ; retry
+             2419200     ; expire
+             604800 )    ; minimum TTL
+;
+    IN NS     ns.myorg.net.
+ns  IN A      172.16.123.132
+    IN AAAA   ::1
+
+; A Record for the services
+mail    IN  A   172.16.123.131
+server  IN  A   172.16.123.130

@@ -1,0 +1,9 @@
+zone "myorg.net" {
+    type master;
+    file "/etc/bind/db.myorg.net";
+};
+
+zone "internal.myorg.net" {
+    type master;
+    file "/etc/bind/db.internal.myorg.net";
+};
